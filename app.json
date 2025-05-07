@@ -21,7 +21,9 @@
         "foregroundImage": "./assets/AppIcon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.bharatsudhar.app"
+      "package": "com.bharatsudhar.app",
+      "versionCode": 1,
+      "permissions": []
     },
     "web": {
       "favicon": "./assets/AppIcon.png"
@@ -29,10 +31,23 @@
     "primaryColor": "#4f46e5",
     "description": "A civic engagement app to report and track local issues",
     "sdkVersion": "53.0.0",
+    "owner": "priyanshu-dl",
     "extra": {
       "eas": {
-        "projectId": "bharat-sudhar-app"
+        "projectId": "2c4ca1d2-78de-48e3-b260-22533eb0d693"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 33,
+            "targetSdkVersion": 33,
+            "buildToolsVersion": "33.0.0"
+          }
+        }
+      ]
+    ]
   }
 }

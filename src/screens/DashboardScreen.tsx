@@ -25,11 +25,11 @@ const { width } = Dimensions.get("window");
 // Define images with fallbacks
 const IMAGES = {
   pothole: require("../../assets/images/RoadPotholeIssue.jpg"),
-  streetlight: require("../../assets/images/StreelLightIssue.jpg"),
+  streetlight: require("../../assets/images/StreetLightIssue.jpg"),
   water: require("../../assets/images/WaterShortageIssue.jpg"),
-  garbage: require("../../assets/images/GrabageCollectionIssue.jpg"),
+  garbage: require("../../assets/images/GarbageCollectionIssue.jpg"),
   trafficSignal: require("../../assets/images/TrafficLightIssue.jpg"),
-  roadRepair: require("../../assets/images/RoadReapirIssue.jpg"),
+  roadRepair: require("../../assets/images/RoadRepairIssue.jpg"),
 };
 
 const LOGO = require("../../assets/AppIcon.png");

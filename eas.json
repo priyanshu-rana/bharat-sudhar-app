@@ -1,0 +1,19 @@
+{
+  "cli": {
+    "version": ">= 0.34.0",
+    "requireCommit": false
+  },
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://example.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

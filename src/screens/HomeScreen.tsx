@@ -27,11 +27,11 @@ const IMAGES = {
   logo: require("../../assets/logo.png"),
   cityBg: require("../../assets/city-bg.jpg"),
   pothole: require("../../assets/images/RoadPotholeIssue.jpg"),
-  streetlight: require("../../assets/images/StreelLightIssue.jpg"),
+  streetlight: require("../../assets/images/StreetLightIssue.jpg"),
   water: require("../../assets/images/WaterShortageIssue.jpg"),
-  garbage: require("../../assets/images/GrabageCollectionIssue.jpg"),
+  garbage: require("../../assets/images/GarbageCollectionIssue.jpg"),
   trafficSignal: require("../../assets/images/TrafficLightIssue.jpg"),
-  success: require("../../assets/images/RoadReapirIssue.jpg"),
+  success: require("../../assets/images/RoadRepairIssue.jpg"),
 };
 
 // Safely get image - handle case when image might be missing
