@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Bharat Sudhar",
+    "slug": "bharat-sudhar-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/AppIcon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/AppIcon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bharatsudhar.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/AppIcon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.bharatsudhar.app"
+    },
+    "web": {
+      "favicon": "./assets/AppIcon.png"
+    },
+    "primaryColor": "#4f46e5",
+    "description": "A civic engagement app to report and track local issues",
+    "sdkVersion": "53.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "bharat-sudhar-app"
+      }
+    }
+  }
+}
