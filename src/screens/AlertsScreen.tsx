@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,11 +8,24 @@ import {
   TouchableOpacity,
   Platform,
   Image,
+  Alert,
+  Modal,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList, StatusType } from "../navigation/types";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Location from "expo-location";
+import * as TaskManager from "expo-task-manager";
+import { Linking } from "react-native";
+import MapView, { Circle, Marker } from "react-native-maps";
+import { AlertMapStyles } from "../components/AlertMap/AlertMapStylesheet";
+import { calculateDistance, MOCK_USERS } from "../helpers";
+import Slider from "@react-native-community/slider";
+import {
+  NearbyMembersList,
+  UserType,
+} from "../components/AlertMap/NearbyMember/NearbyMemberList";
 
 type AlertsScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Alerts">;
@@ -96,8 +109,126 @@ const ALERTS: AlertItem[] = [
 
 const LOGO = require("../../assets/AppIcon.png");
 
+const LOCATION_TASK_NAME = "background-location-task";
+TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
+  if (error) {
+    console.error(error);
+    return;
+  }
+  if (data) {
+    const { locations } = data as { locations: Location.LocationObject[] };
+    console.log("Background location update:", locations[0]);
+  }
+});
+
 const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
   const [activeFilter, setActiveFilter] = useState<SeverityType | "all">("all");
+  const [location, setLocation] = useState<Location.LocationObject | null>(
+    null
+  );
+  const [radius, setRadius] = useState(2);
+  const [nearbyUsers, setNearbyUsers] = useState<UserType[]>([]);
+  const [sosActive, setSosActive] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            "Location Permission Required",
+            "Please enable location services in settings to use the SOS feature",
+            [
+              {
+                text: "Open Settings",
+                onPress: () => Linking.openSettings(),
+              },
+              { text: "Cancel", style: "cancel" },
+            ]
+          );
+          return;
+        }
+
+        const backgroundStatus =
+          await Location.requestBackgroundPermissionsAsync();
+        if (!backgroundStatus.granted) {
+          Alert.alert(
+            "Background Permission Required",
+            "SOS feature needs background location access to work properly",
+            [
+              {
+                text: "Open Settings",
+                onPress: () => Linking.openSettings(),
+              },
+              { text: "Cancel", style: "cancel" },
+            ]
+          );
+        }
+      } catch (error) {
+        console.error("Permission error:", error);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (location) {
+      const filteredUsers = MOCK_USERS.map((user) => {
+        const distance = calculateDistance(
+          location.coords.latitude,
+          location.coords.longitude,
+          user.lat,
+          user.lon
+        );
+        return { ...user, distance: distance };
+      }).filter((user) => user.distance <= radius);
+      setNearbyUsers(filteredUsers);
+    }
+  }, [location, radius]);
+
+  const startLocationTracking = async () => {
+    await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+      accuracy: Location.Accuracy.Highest,
+      timeInterval: 5000,
+      distanceInterval: 0,
+      showsBackgroundLocationIndicator: true,
+    });
+  };
+
+  const handleSOS = async () => {
+    try {
+      let location = await Location.getCurrentPositionAsync({});
+      setLocation(location);
+      await startLocationTracking();
+      // await sendSOSAlert(location); //TODO: Integrate BE API to send SOS
+      setSosActive(true);
+      Alert.alert(
+        "SOS Activated",
+        `Your location is being tracked, be patient and wait for help.`,
+        [
+          {
+            text: "View Map",
+            onPress: () => setShowMap(true),
+          },
+          {
+            text: "Cancel SOS",
+            onPress: () => stopSOS(),
+            style: "destructive",
+          },
+        ],
+        { cancelable: false }
+      );
+    } catch (error) {
+      Alert.alert("Error", "Failed to get location");
+    }
+  };
+
+  const stopSOS = async () => {
+    setSosActive(false);
+    setShowMap(false);
+    await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+    Alert.alert("SOS Stopped", "Location sharing has been disabled");
+  };
 
   const handleAlertPress = (alertId: string) => {
     // Handle alert selection, e.g., navigate to alert details
@@ -250,6 +381,15 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
         </ScrollView>
       </View>
 
+      {/* Added SOS Button */}
+      <TouchableOpacity
+        style={[styles.sosButton, sosActive && styles.sosActive]}
+        onPress={sosActive ? stopSOS : handleSOS}
+      >
+        <Text style={styles.sosButtonText}>
+          {sosActive ? "SOS ACTIVE" : "SOS"}
+        </Text>
+      </TouchableOpacity>
       {/* Emergency Alerts Section */}
       <ScrollView style={styles.contentContainer}>
         <View style={styles.alertsContainer}>
@@ -297,6 +437,92 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
           ))}
         </View>
       </ScrollView>
+      {/* Map Modal */}
+      <Modal visible={showMap} style={AlertMapStyles.modal}>
+        <View style={AlertMapStyles.mapContainer}>
+          {location && (
+            <>
+              <MapView
+                style={AlertMapStyles.map}
+                initialRegion={{
+                  latitude: location.coords.latitude,
+                  longitude: location.coords.longitude,
+                  latitudeDelta: 0.005,
+                  longitudeDelta: 0.005,
+                }}
+              >
+                {/* Current User Location */}
+                <Marker
+                  coordinate={{
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                  }}
+                  title="Your Location"
+                  description="This is your current position"
+                  pinColor="blue"
+                />
+
+                {/* Radius Circle */}
+                <Circle
+                  center={{
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                  }}
+                  radius={radius * 1000} //Converting radius from km to meters
+                  strokeColor="rgba(0, 150, 255, 0.5)"
+                  fillColor="rgba(0, 150, 255, 0.2)"
+                />
+
+                {/* Nearby Users */}
+                {nearbyUsers.map((user) => (
+                  <Marker
+                    key={user.id}
+                    coordinate={{ latitude: user.lat, longitude: user.lon }}
+                    title={user.name}
+                    pinColor={user.status === "accepted" ? "green" : "red"}
+                  />
+                ))}
+              </MapView>
+              {/* Bottom Controls Container */}
+              <View style={AlertMapStyles.bottomContainer}>
+                {/* Radius Control */}
+                <View style={AlertMapStyles.controls}>
+                  <Text style={AlertMapStyles.radiusText}>
+                    Search Radius: {radius} km
+                  </Text>
+                  <Slider
+                    style={AlertMapStyles.slider}
+                    minimumValue={1}
+                    maximumValue={30}
+                    step={1}
+                    value={radius}
+                    onValueChange={(value) => setRadius(value)}
+                    minimumTrackTintColor="#1fb28a"
+                    maximumTrackTintColor="#d3d3d3"
+                    thumbTintColor="#1a9274"
+                  />
+                </View>
+
+                {/* Nearby Members List */}
+                <NearbyMembersList users={nearbyUsers} />
+              </View>
+
+              <TouchableOpacity
+                style={AlertMapStyles.closeMapButton}
+                onPress={() => setShowMap(false)}
+              >
+                <Text style={AlertMapStyles.closeMapText}>Close Map</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          <TouchableOpacity
+            style={AlertMapStyles.closeMapButton}
+            onPress={() => setShowMap(false)}
+          >
+            <Text style={AlertMapStyles.closeMapText}>Close Map</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -476,6 +702,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#4f46e5",
     fontWeight: "500",
+  },
+  // Add new SOS button styles
+
+  sosButton: {
+    alignSelf: "center",
+    backgroundColor: "#ef4444",
+    paddingHorizontal: 32,
+    paddingVertical: 8,
+    borderRadius: 30,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    marginVertical: 10,
+  },
+  sosActive: {
+    backgroundColor: "#991b1b",
+  },
+  sosButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
 

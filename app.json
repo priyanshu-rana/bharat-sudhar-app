@@ -27,8 +27,18 @@
       },
       "package": "com.bharatsudhar.app",
       "versionCode": 1,
-      "permissions": [],
-      "softwareKeyboardLayoutMode": "pan"
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE"
+      ],
+      "softwareKeyboardLayoutMode": "pan",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyD7vGcTq2p7TTlH4V9qJx1lJYvJjY0zQ3Q"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/AppIcon.png"
@@ -59,6 +69,13 @@
         "expo-image-picker",
         {
           "photosPermission": "The app accesses your photos to upload issue and other user related images"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "This app uses your location for emergency SOS functionality",
+          "isAndroidBackgroundLocationEnabled": true
         }
       ]
     ]
