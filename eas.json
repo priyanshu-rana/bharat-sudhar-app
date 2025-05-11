@@ -6,7 +6,9 @@
   "build": {
     "preview": {
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "ndk": "26.1.10909125",
+        "gradleCommand": "clean :app:assembleDebug"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://example.com"
