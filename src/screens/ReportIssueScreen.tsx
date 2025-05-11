@@ -16,6 +16,7 @@ import { StatusBar } from "expo-status-bar";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { LinearGradient } from "expo-linear-gradient";
+import * as ImagePicker from "expo-image-picker";
 
 const LOGO = require("../../assets/AppIcon.png");
 
@@ -28,6 +29,7 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("");
+  const [images, setImages] = useState<string[]>([]);
 
   const CATEGORIES = [
     { id: "pothole", name: "Road Pothole", icon: "🛣️" },
@@ -37,6 +39,55 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
     { id: "traffic", name: "Traffic Signal", icon: "🚦" },
     { id: "other", name: "Other", icon: "📌" },
   ];
+
+  const handleAddPhoto = () => {
+    Alert.alert("Add Photo", "Choose the source", [
+      { text: "Take Photo", onPress: takePhoto },
+      { text: "Choose from Library", onPress: pickImage },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== ImagePicker.PermissionStatus.GRANTED) {
+      Alert.alert("Permission required", "Please allow access to your photos.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
+      allowsMultipleSelection: true,
+      selectionLimit: 3 - images.length,
+    });
+
+    if (!result.canceled) {
+      const newImages = result.assets.map((asset) => asset.uri);
+      setImages((prev) => [...prev, ...newImages].slice(0, 3));
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== ImagePicker.PermissionStatus.GRANTED) {
+      Alert.alert("Permission required", "Please allow access to your camera.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const newImage = result.assets[0].uri;
+      setImages((prev) => [...prev, newImage].slice(0, 3));
+    }
+  };
+  const handleDeleteImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = () => {
     if (!title || !description || !location || !category) {
@@ -161,15 +212,25 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
               </Text>
 
               <View style={styles.imagesPreviewContainer}>
-                <TouchableOpacity style={styles.imagePlaceholder}>
-                  <Text style={styles.plusIcon}>+</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.imagePlaceholder}>
-                  <Text style={styles.plusIcon}>+</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.imagePlaceholder}>
-                  <Text style={styles.plusIcon}>+</Text>
-                </TouchableOpacity>
+                {images.map((uri, index) => (
+                  <View key={index} style={styles.imageContainer}>
+                    <Image source={{ uri }} style={styles.image} />
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDeleteImage(index)}
+                    >
+                      <Text style={styles.deleteButtonText}>x</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                {images.length < 3 && (
+                  <TouchableOpacity
+                    style={styles.imagePlaceholder}
+                    onPress={handleAddPhoto}
+                  >
+                    <Text style={styles.plusIcon}>+</Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               <TouchableOpacity style={styles.photoButton}>
@@ -407,6 +468,33 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 24,
     color: "#ffffff",
+  },
+  imageContainer: {
+    position: "relative",
+    width: 80,
+    height: 80,
+    marginRight: 12,
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 8,
+  },
+  deleteButton: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: "#ff4444",
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    color: "white",
+    fontSize: 18,
+    lineHeight: 20,
   },
 });
 

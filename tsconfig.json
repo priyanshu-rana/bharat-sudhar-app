@@ -3,6 +3,9 @@
   "compilerOptions": {
     "strict": true,
     "esModuleInterop": true,
-    "jsx": "react-native"
+    "jsx": "react-native",
+    "paths": {
+      "@react-navigation/*": ["./node_modules/@react-navigation/*"]
+    }
   }
 }

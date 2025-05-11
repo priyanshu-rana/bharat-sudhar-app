@@ -14,7 +14,11 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bharatsudhar.app"
+      "bundleIdentifier": "com.bharatsudhar.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow camera access to take issue and other user related photos",
+        "NSPhotoLibraryUsageDescription": "Allow photo library access to upload issue and other user related photos"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,14 +27,14 @@
       },
       "package": "com.bharatsudhar.app",
       "versionCode": 1,
-      "permissions": []
+      "permissions": [],
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "favicon": "./assets/AppIcon.png"
     },
     "primaryColor": "#4f46e5",
     "description": "A civic engagement app to report and track local issues",
-    "sdkVersion": "53.0.0",
     "owner": "priyanshu-dl",
     "extra": {
       "eas": {
@@ -49,6 +53,12 @@
               "androidx.core.splashscreen.version": "1.0.1"
             }
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to upload issue and other user related images"
         }
       ]
     ]
