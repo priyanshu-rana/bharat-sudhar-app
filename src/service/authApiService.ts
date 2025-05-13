@@ -1,13 +1,38 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
-const API_BASE_URL = "http://10.0.2.2:8080/auth"; // For Android emulator
+const getApiBaseUrl = () => {
+  if (__DEV__) {
+    // return `http://{{DEVICE_IP}}:8080/auth`; //IMP: Add Device IP
+
+    return `http://{{DEVICE_IP}}:8080/auth`; //IMP: Add Device IP
+
+    /* 
+    // The following can be uncommented when you have proper server setup for emulators
+    if (Platform.OS === 'android') {
+      // 10.0.2.2 is for Android emulator - only works if your server is properly configured
+      return "http://10.0.2.2:8080/auth";
+    } else if (Platform.OS === 'ios') {
+      // iOS simulator can use localhost
+      return "http://localhost:8080/auth";
+    }
+    */
+  } else {
+    return "https://api.bharatsudhar.com/auth"; //TODO: Add Prod BE Url
+  }
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+console.log("Using API URL:", API_BASE_URL);
 
 const authApiService = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 15000, // Increased timeout to handle slower connections
 });
 
 // Add interceptor to include JWT token in requests
@@ -34,10 +59,8 @@ interface SignupData {
   district: string;
   phoneNumber: string;
   location: {
-    coordinates: {
-      latitude: number;
-      longitude: number;
-    };
+    type: string;
+    coordinates: number[]; // [longitude, latitude] in GeoJSON format
     address: string;
   };
 }
