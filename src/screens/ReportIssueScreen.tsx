@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -17,6 +17,8 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
+import { getUser } from "../service/authApiService";
+import { createReport, ReportData } from "../service/reportApiService";
 
 const LOGO = require("../../assets/AppIcon.png");
 
@@ -25,18 +27,45 @@ type ReportIssueScreenProps = {
 };
 
 const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [location, setLocation] = useState("");
-  const [category, setCategory] = useState("");
-  const [images, setImages] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getUser();
+        setUser(userData);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const [formData, setFormData] = useState<ReportData>({
+    title: "",
+    description: "",
+    category: "",
+    images: [],
+    state: user?.state,
+    district: user?.district,
+    location: {
+      type: "Point",
+      coordinates: [
+        user?.location.coordinates[0],
+        user?.location.coordinates[1],
+      ],
+      address: user?.location.address,
+    },
+    userId: user?._id,
+  });
 
   const CATEGORIES = [
-    { id: "pothole", name: "Road Pothole", icon: "🛣️" },
-    { id: "streetlight", name: "Street Light Issue", icon: "💡" },
+    { id: "infrastructure", name: "Road Pothole", icon: "🛣️" },
+    { id: "electricity", name: "Street Light Issue", icon: "💡" },
     { id: "water", name: "Water Shortage", icon: "💧" },
-    { id: "garbage", name: "Garbage Collection", icon: "🗑️" },
-    { id: "traffic", name: "Traffic Signal", icon: "🚦" },
+    { id: "pollution", name: "Garbage Collection", icon: "🗑️" },
+    { id: "noise", name: "Traffic Signal", icon: "🚦" },
     { id: "other", name: "Other", icon: "📌" },
   ];
 
@@ -59,12 +88,12 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
       allowsEditing: false,
       quality: 1,
       allowsMultipleSelection: true,
-      selectionLimit: 3 - images.length,
+      selectionLimit: 3 - formData.images.length,
     });
 
     if (!result.canceled) {
       const newImages = result.assets.map((asset) => asset.uri);
-      setImages((prev) => [...prev, ...newImages].slice(0, 3));
+      formData.images = [...formData.images, ...newImages];
     }
   };
 
@@ -82,34 +111,46 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
 
     if (!result.canceled) {
       const newImage = result.assets[0].uri;
-      setImages((prev) => [...prev, newImage].slice(0, 3));
+      formData.images = [...formData.images, newImage];
     }
   };
   const handleDeleteImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    formData.images = formData.images.filter((_, i) => i !== index);
   };
 
-  const handleSubmit = () => {
-    if (!title || !description || !location || !category) {
+  const handleInputChange = (key: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    if (
+      !formData.title ||
+      !formData.description ||
+      !formData.location ||
+      !formData.category
+    ) {
       Alert.alert("Missing Fields", "Please fill in all required fields");
       return;
     }
 
-    // In a real app, you would submit the issue to your backend here
-    Alert.alert(
-      "Issue Reported",
-      "Your issue has been reported successfully. You can track its status in the dashboard.",
-      [
-        {
-          text: "Go to Dashboard",
-          onPress: () => navigation.navigate("Dashboard"),
-        },
-        {
-          text: "OK",
-          onPress: () => navigation.navigate("Home"),
-        },
-      ]
-    );
+    setIsSubmitting(true);
+
+    try {
+      const response = await createReport(formData);
+      if (response.success) {
+        Alert.alert("Success", response.message, [
+          { text: "OK", onPress: () => navigation.navigate("Dashboard") },
+        ]);
+      } else {
+        Alert.alert("Error", response.message);
+      }
+    } catch (error: any) {
+      console.error("Error reporting issue:", error);
+      Alert.alert("Error", error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -148,8 +189,8 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
               <TextInput
                 style={styles.input}
                 placeholder="Enter a short, descriptive title"
-                value={title}
-                onChangeText={setTitle}
+                value={formData.title}
+                onChangeText={(value) => handleInputChange("title", value)}
                 placeholderTextColor="#94a3b8"
               />
 
@@ -160,15 +201,17 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
                     key={cat.id}
                     style={[
                       styles.categoryButton,
-                      category === cat.id && styles.categoryButtonActive,
+                      formData.category === cat.id &&
+                        styles.categoryButtonActive,
                     ]}
-                    onPress={() => setCategory(cat.id)}
+                    onPress={() => handleInputChange("category", cat.id)}
                   >
                     <Text style={styles.categoryIcon}>{cat.icon}</Text>
                     <Text
                       style={[
                         styles.categoryButtonText,
-                        category === cat.id && styles.categoryButtonTextActive,
+                        formData.category === cat.id &&
+                          styles.categoryButtonTextActive,
                       ]}
                     >
                       {cat.name}
@@ -182,8 +225,8 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
                 <TextInput
                   style={styles.locationInput}
                   placeholder="Enter the location of the issue"
-                  value={location}
-                  onChangeText={setLocation}
+                  value={formData.location.address}
+                  onChangeText={(value) => handleInputChange("location", value)}
                   placeholderTextColor="#94a3b8"
                 />
                 <TouchableOpacity style={styles.locationButton}>
@@ -195,8 +238,10 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Describe the issue in detail"
-                value={description}
-                onChangeText={setDescription}
+                value={formData.description}
+                onChangeText={(value) =>
+                  handleInputChange("description", value)
+                }
                 multiline
                 numberOfLines={5}
                 textAlignVertical="top"
@@ -212,7 +257,7 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
               </Text>
 
               <View style={styles.imagesPreviewContainer}>
-                {images.map((uri, index) => (
+                {formData.images.map((uri: string, index: number) => (
                   <View key={index} style={styles.imageContainer}>
                     <Image source={{ uri }} style={styles.image} />
                     <TouchableOpacity
@@ -223,7 +268,7 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
                     </TouchableOpacity>
                   </View>
                 ))}
-                {images.length < 3 && (
+                {formData.images.length < 3 && (
                   <TouchableOpacity
                     style={styles.imagePlaceholder}
                     onPress={handleAddPhoto}
