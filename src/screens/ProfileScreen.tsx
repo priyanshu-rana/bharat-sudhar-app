@@ -13,6 +13,10 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusType } from "../navigation/types";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/types";
+import { logout } from "../service/authApiService";
 
 const LOGO = require("../../assets/AppIcon.png");
 
@@ -102,6 +106,37 @@ const STATS = [
 
 const ProfileScreen = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Logout",
+          onPress: async () => {
+            try {
+              await logout();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (error) {
+              console.error("Logout error:", error);
+              Alert.alert("Error", "Failed to logout. Please try again.");
+            }
+          },
+          style: "destructive",
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   const handleEditProfile = () => {
     Alert.alert(
@@ -454,6 +489,14 @@ const ProfileScreen = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* Add Logout Button at the bottom of the screen */}
+      <TouchableOpacity 
+        style={styles.logoutButton} 
+        onPress={handleLogout}
+      >
+        <Text style={styles.logoutButtonText}>Logout</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -837,6 +880,19 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 12,
     color: "#64748b",
+  },
+  logoutButton: {
+    backgroundColor: "#ef4444",
+    borderRadius: 10,
+    marginHorizontal: 16,
+    marginVertical: 16,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  logoutButtonText: {
+    color: "#ffffff",
+    fontWeight: "600",
+    fontSize: 16,
   },
 });
 

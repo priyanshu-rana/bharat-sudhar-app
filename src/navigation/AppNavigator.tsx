@@ -12,6 +12,8 @@ import SettingsScreen from "../screens/SettingsScreen";
 import Navbar from "../components/Navbar";
 
 import { RootStackParamList } from "./types";
+import LoginScreen from "../screens/LoginScreen/LoginScreen";
+import SignUpScreen from "../screens/LoginScreen/SignupScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -55,11 +57,13 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName="Login"
         screenOptions={{
           headerShown: false,
         }}
       >
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="Home" component={HomeWithNavbar} />
         <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
         <Stack.Screen name="Dashboard" component={DashboardWithNavbar} />

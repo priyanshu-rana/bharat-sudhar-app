@@ -13,12 +13,17 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { logout } from "../service/authApiService";
+import { RootStackParamList } from "../navigation/types";
 
 // Add this logo constant below imports
 const LOGO = require("../../assets/AppIcon.png");
 
 // Settings screen component
 const SettingsScreen = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   // State for toggle switches
   const [notifications, setNotifications] = useState(true);
   const [locationServices, setLocationServices] = useState(true);
@@ -37,9 +42,19 @@ const SettingsScreen = () => {
         },
         {
           text: "Logout",
-          onPress: () => {
-            // Handle logout logic here
-            console.log("User logged out");
+          onPress: async () => {
+            try {
+              // Call the logout function from authApiService
+              await logout();
+              // Navigate to the Login screen
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (error) {
+              console.error("Logout error:", error);
+              Alert.alert("Error", "Failed to logout. Please try again.");
+            }
           },
           style: "destructive",
         },
