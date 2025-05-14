@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -15,6 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type DashboardScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Dashboard">;
@@ -28,69 +29,93 @@ const IMAGES = {
   streetlight: require("../../assets/images/StreetLightIssue.jpg"),
   water: require("../../assets/images/WaterShortageIssue.jpg"),
   garbage: require("../../assets/images/GarbageCollectionIssue.jpg"),
-  trafficSignal: require("../../assets/images/TrafficLightIssue.jpg"),
-  roadRepair: require("../../assets/images/RoadRepairIssue.jpg"),
+  traffic: require("../../assets/images/TrafficLightIssue.jpg"),
+  other: require("../../assets/AppIcon.png"),
 };
 
 const LOGO = require("../../assets/AppIcon.png");
 
+// Initial mock issues
+const INITIAL_ISSUES = [
+  {
+    id: "1",
+    title: "Pothole on MG Road",
+    description: "Large pothole causing traffic and safety hazard",
+    location: "MG Road, Bangalore",
+    date: "2 days ago",
+    status: "pending",
+    upvotes: 24,
+    image: IMAGES.pothole,
+  },
+  {
+    id: "2",
+    title: "Street Light Not Working",
+    description: "Street light has been out for a week causing safety concerns",
+    location: "Anna Nagar, Chennai",
+    date: "1 week ago",
+    status: "in_progress",
+    upvotes: 18,
+    image: IMAGES.streetlight,
+  },
+  {
+    id: "3",
+    title: "Water Shortage",
+    description: "No water supply for the past 3 days",
+    location: "Sector 22, Delhi",
+    date: "3 days ago",
+    status: "resolved",
+    upvotes: 35,
+    image: IMAGES.water,
+  },
+  {
+    id: "4",
+    title: "Garbage Collection Missed",
+    description: "Garbage has not been collected for 5 days",
+    location: "Koramangala, Bangalore",
+    date: "5 days ago",
+    status: "pending",
+    upvotes: 12,
+    image: IMAGES.garbage,
+  },
+  {
+    id: "5",
+    title: "Traffic Signal Malfunction",
+    description: "Traffic signal not working properly during peak hours",
+    location: "Connaught Place, Delhi",
+    date: "1 day ago",
+    status: "in_progress",
+    upvotes: 28,
+    image: IMAGES.traffic,
+  },
+];
+
 const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
   const [activeFilter, setActiveFilter] = useState("all");
+  const [issues, setIssues] = useState<any[]>([]);
 
-  // Sample issues data
-  const issues = [
-    {
-      id: "1",
-      title: "Pothole on MG Road",
-      description: "Large pothole causing traffic and safety hazard",
-      location: "MG Road, Bangalore",
-      date: "2 days ago",
-      status: "pending",
-      upvotes: 24,
-      image: IMAGES.pothole,
-    },
-    {
-      id: "2",
-      title: "Street Light Not Working",
-      description:
-        "Street light has been out for a week causing safety concerns",
-      location: "Anna Nagar, Chennai",
-      date: "1 week ago",
-      status: "in_progress",
-      upvotes: 18,
-      image: IMAGES.streetlight,
-    },
-    {
-      id: "3",
-      title: "Water Shortage",
-      description: "No water supply for the past 3 days",
-      location: "Sector 22, Delhi",
-      date: "3 days ago",
-      status: "resolved",
-      upvotes: 35,
-      image: IMAGES.water,
-    },
-    {
-      id: "4",
-      title: "Garbage Collection Missed",
-      description: "Garbage has not been collected for 5 days",
-      location: "Koramangala, Bangalore",
-      date: "5 days ago",
-      status: "pending",
-      upvotes: 12,
-      image: IMAGES.garbage,
-    },
-    {
-      id: "5",
-      title: "Traffic Signal Malfunction",
-      description: "Traffic signal not working properly during peak hours",
-      location: "Connaught Place, Delhi",
-      date: "1 day ago",
-      status: "in_progress",
-      upvotes: 28,
-      image: IMAGES.trafficSignal,
-    },
-  ];
+  // Load issues from AsyncStorage on component mount
+  useEffect(() => {
+    const loadIssues = async () => {
+      try {
+        const storedIssues = await AsyncStorage.getItem("reportedIssues");
+        if (storedIssues) {
+          setIssues(JSON.parse(storedIssues));
+        } else {
+          // If no stored issues, use initial mock data and save it
+          setIssues(INITIAL_ISSUES);
+          await AsyncStorage.setItem(
+            "reportedIssues",
+            JSON.stringify(INITIAL_ISSUES)
+          );
+        }
+      } catch (error) {
+        console.error("Failed to load issues:", error);
+        setIssues(INITIAL_ISSUES);
+      }
+    };
+
+    loadIssues();
+  }, []);
 
   // Filter issues based on active filter
   const filteredIssues = issues.filter((issue) => {
@@ -98,9 +123,45 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
     return issue.status === activeFilter;
   });
 
+  // Function to add new issue
+  const addNewIssue = async (newIssue: any) => {
+    try {
+      // Process image if it's a string URI
+      if (typeof newIssue.image === "string") {
+        // For now, we'll just use the default image based on category
+        newIssue.image =
+          IMAGES[newIssue.category as keyof typeof IMAGES] || IMAGES.other;
+      }
+
+      const updatedIssues = [...issues, newIssue];
+      setIssues(updatedIssues);
+
+      // Save to AsyncStorage
+      await AsyncStorage.setItem(
+        "reportedIssues",
+        JSON.stringify(updatedIssues)
+      );
+    } catch (error) {
+      console.error("Failed to save new issue:", error);
+    }
+  };
+
+  // Function to navigate to ReportIssueScreen with addNewIssue function
+  const navigateToReportIssue = () => {
+    navigation.navigate("ReportIssue", { addNewIssue });
+  };
+
   const renderIssueItem = ({ item }: { item: any }) => (
     <View style={styles.issueCard}>
-      <Image source={item.image} style={styles.issueImage} resizeMode="cover" />
+      <Image
+        source={
+          typeof item.image === "string"
+            ? IMAGES[item.category as keyof typeof IMAGES] || IMAGES.other
+            : item.image
+        }
+        style={styles.issueImage}
+        resizeMode="cover"
+      />
       <View style={styles.issueContent}>
         <View style={styles.issueHeader}>
           <Text style={styles.issueTitle}>{item.title}</Text>
@@ -164,6 +225,12 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
           <View style={styles.headerTop}>
             <Image source={LOGO} style={styles.headerLogo} />
             <Text style={styles.headerTitle}>Dashboard</Text>
+            <TouchableOpacity
+              style={styles.reportButton}
+              onPress={navigateToReportIssue}
+            >
+              <Text style={styles.reportButtonText}>Report Issue</Text>
+            </TouchableOpacity>
           </View>
         </LinearGradient>
 
@@ -465,6 +532,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#4f46e5",
     fontWeight: "bold",
+  },
+  reportButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginLeft: "auto",
+  },
+  reportButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
 

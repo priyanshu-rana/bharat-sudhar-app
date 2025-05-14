@@ -17,14 +17,30 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LOGO = require("../../assets/AppIcon.png");
 
-type ReportIssueScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, "ReportIssue">;
+// Define images with fallbacks
+const IMAGES = {
+  pothole: require("../../assets/images/RoadPotholeIssue.jpg"),
+  streetlight: require("../../assets/images/StreetLightIssue.jpg"),
+  water: require("../../assets/images/WaterShortageIssue.jpg"),
+  garbage: require("../../assets/images/GarbageCollectionIssue.jpg"),
+  traffic: require("../../assets/images/TrafficLightIssue.jpg"),
+  other: require("../../assets/AppIcon.png"),
 };
 
-const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
+type ReportIssueScreenProps = {
+  navigation: NativeStackNavigationProp<RootStackParamList, "ReportIssue">;
+  route: {
+    params?: {
+      addNewIssue?: (issue: any) => void;
+    };
+  };
+};
+
+const ReportIssueScreen = ({ navigation, route }: ReportIssueScreenProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
@@ -85,31 +101,77 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
       setImages((prev) => [...prev, newImage].slice(0, 3));
     }
   };
+
   const handleDeleteImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title || !description || !location || !category) {
       Alert.alert("Missing Fields", "Please fill in all required fields");
       return;
     }
 
-    // In a real app, you would submit the issue to your backend here
-    Alert.alert(
-      "Issue Reported",
-      "Your issue has been reported successfully. You can track its status in the dashboard.",
-      [
-        {
-          text: "Go to Dashboard",
-          onPress: () => navigation.navigate("Dashboard"),
-        },
-        {
-          text: "OK",
-          onPress: () => navigation.navigate("Home"),
-        },
-      ]
-    );
+    try {
+      // Format date in a user-friendly way
+      const now = new Date();
+      const formattedDate = "Just now";
+
+      // Create new issue object
+      const newIssue = {
+        id: Date.now().toString(), // Using timestamp as temporary ID
+        title,
+        description,
+        location,
+        category,
+        date: formattedDate,
+        status: "pending",
+        upvotes: 0,
+        // Store the category for image lookup rather than the actual image URI
+        // This allows us to use the correct image when displaying the issue
+        image: category,
+      };
+
+      // Add the new issue using the function passed through route params
+      if (route.params?.addNewIssue) {
+        await route.params.addNewIssue(newIssue);
+      } else {
+        // Fallback: Save directly to AsyncStorage if function not available
+        const storedIssues = await AsyncStorage.getItem("reportedIssues");
+        const currentIssues = storedIssues ? JSON.parse(storedIssues) : [];
+        const updatedIssues = [...currentIssues, newIssue];
+        await AsyncStorage.setItem(
+          "reportedIssues",
+          JSON.stringify(updatedIssues)
+        );
+      }
+
+      // Show success message
+      Alert.alert(
+        "Issue Reported",
+        "Your issue has been reported successfully. You can track its status in the dashboard.",
+        [
+          {
+            text: "Go to Dashboard",
+            onPress: () => navigation.navigate("Dashboard"),
+          },
+          {
+            text: "OK",
+            onPress: () => navigation.navigate("Home"),
+          },
+        ]
+      );
+
+      // Reset form
+      setTitle("");
+      setDescription("");
+      setLocation("");
+      setCategory("");
+      setImages([]);
+    } catch (error) {
+      console.error("Error submitting issue:", error);
+      Alert.alert("Error", "Failed to submit your issue. Please try again.");
+    }
   };
 
   return (
@@ -233,7 +295,10 @@ const ReportIssueScreen = ({ navigation }: ReportIssueScreenProps) => {
                 )}
               </View>
 
-              <TouchableOpacity style={styles.photoButton}>
+              <TouchableOpacity
+                style={styles.photoButton}
+                onPress={handleAddPhoto}
+              >
                 <Text style={styles.photoButtonIcon}>📷</Text>
                 <Text style={styles.photoButtonText}>Add Photos</Text>
               </TouchableOpacity>

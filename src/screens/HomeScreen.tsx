@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -15,6 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Home">;
@@ -30,7 +31,8 @@ const IMAGES = {
   streetlight: require("../../assets/images/StreetLightIssue.jpg"),
   water: require("../../assets/images/WaterShortageIssue.jpg"),
   garbage: require("../../assets/images/GarbageCollectionIssue.jpg"),
-  trafficSignal: require("../../assets/images/TrafficLightIssue.jpg"),
+  traffic: require("../../assets/images/TrafficLightIssue.jpg"),
+  other: require("../../assets/AppIcon.png"),
   success: require("../../assets/images/RoadRepairIssue.jpg"),
 };
 
@@ -51,13 +53,7 @@ const LOGO = require("../../assets/AppIcon.png");
 const HomeScreen = ({ navigation }: HomeScreenProps) => {
   // State to track images that failed to load
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
-
-  const handleImageError = (id: string) => {
-    setFailedImages((prev) => ({ ...prev, [id]: true }));
-  };
-
-  // Dummy data for featured issues
-  const featuredIssues = [
+  const [featuredIssues, setFeaturedIssues] = useState([
     {
       id: "1",
       title: "Pothole on MG Road",
@@ -82,7 +78,90 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
       status: "resolved",
       image: IMAGES.water,
     },
-  ];
+  ]);
+
+  useEffect(() => {
+    // Load issues from AsyncStorage
+    const loadIssues = async () => {
+      try {
+        const storedIssues = await AsyncStorage.getItem("reportedIssues");
+        if (storedIssues) {
+          const allIssues = JSON.parse(storedIssues);
+          // Get the 3 most recent issues for the featured section
+          const recent = allIssues
+            .slice(-3)
+            .reverse()
+            .map((issue: any) => ({
+              id: issue.id,
+              title: issue.title,
+              location: issue.location,
+              votes: issue.upvotes || 0,
+              status: issue.status,
+              image:
+                IMAGES[issue.category as keyof typeof IMAGES] || IMAGES.other,
+              category: issue.category,
+            }));
+
+          if (recent.length > 0) {
+            setFeaturedIssues(recent);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load issues:", error);
+      }
+    };
+
+    loadIssues();
+  }, []);
+
+  const handleImageError = (id: string) => {
+    setFailedImages((prev) => ({ ...prev, [id]: true }));
+  };
+
+  // Function to add new issue and navigate to ReportIssue screen
+  const addNewIssue = async (newIssue: any) => {
+    try {
+      // Process image if it's a string URI
+      if (typeof newIssue.image === "string") {
+        // Use the category image if available, otherwise use default logo
+        newIssue.image =
+          IMAGES[newIssue.category as keyof typeof IMAGES] || IMAGES.other;
+      }
+
+      // Get current issues from storage
+      const storedIssues = await AsyncStorage.getItem("reportedIssues");
+      const currentIssues = storedIssues ? JSON.parse(storedIssues) : [];
+
+      // Add new issue
+      const updatedIssues = [...currentIssues, newIssue];
+
+      // Save to AsyncStorage
+      await AsyncStorage.setItem(
+        "reportedIssues",
+        JSON.stringify(updatedIssues)
+      );
+
+      // Update featured issues
+      const newFeatured = {
+        id: newIssue.id,
+        title: newIssue.title,
+        location: newIssue.location,
+        votes: newIssue.upvotes || 0,
+        status: newIssue.status,
+        image: IMAGES[newIssue.category as keyof typeof IMAGES] || IMAGES.other,
+        category: newIssue.category,
+      };
+
+      setFeaturedIssues((prev) => [newFeatured, ...prev.slice(0, 2)]);
+    } catch (error) {
+      console.error("Failed to save new issue:", error);
+    }
+  };
+
+  // Function to navigate to ReportIssueScreen with addNewIssue function
+  const navigateToReportIssue = () => {
+    navigation.navigate("ReportIssue", { addNewIssue });
+  };
 
   const statistics = [
     {
@@ -142,7 +221,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
               </Text>
               <TouchableOpacity
                 style={styles.reportButton}
-                onPress={() => navigation.navigate("ReportIssue")}
+                onPress={navigateToReportIssue}
               >
                 <Text style={styles.reportButtonText}>Report an Issue</Text>
               </TouchableOpacity>
@@ -178,11 +257,16 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
               >
                 {!failedImages[issue.id] && (
                   <Image
-                    source={issue.image}
+                    source={
+                      typeof issue.image === "string"
+                        ? IMAGES[issue.category as keyof typeof IMAGES] ||
+                          IMAGES.other
+                        : issue.image
+                    }
                     style={styles.issueImage}
                     resizeMode="cover"
                     onError={() => handleImageError(issue.id)}
-                    defaultSource={require("../../assets/placeholders/pothole.jpg")}
+                    defaultSource={IMAGES.other}
                   />
                 )}
                 {failedImages[issue.id] && (
