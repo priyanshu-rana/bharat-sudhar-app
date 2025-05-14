@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -9,6 +9,7 @@ import {
   Image,
   Platform,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,9 +17,25 @@ import { StatusType } from "../navigation/types";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
-import { logout } from "../service/authApiService";
+import { logout, getUser, UserData } from "../service/authApiService";
 
 const LOGO = require("../../assets/AppIcon.png");
+
+// Default user data
+const DEFAULT_USER_DATA = {
+  id: "user123",
+  name: "Bharat User",
+  email: "user@example.com",
+  phone: "+91 98765 43210",
+  location: "India",
+  bio: "Passionate about making my city better! Active citizen helping to improve our community infrastructure.",
+  joinDate: "2023",
+  issuesReported: 0,
+  issuesResolved: 0,
+  profileImage: LOGO,
+  badgeLevel: "New Citizen",
+  points: 0,
+};
 
 interface Activity {
   id: string;
@@ -29,24 +46,6 @@ interface Activity {
   date: string;
   status: StatusType;
 }
-
-// Sample user data
-const USER_DATA = {
-  id: "user123",
-  name: "Priyanshu Rana",
-  email: "priyanshu.rana@example.com",
-  phone: "+91 98765 43210",
-  location: "Dehradun, India",
-  bio: "Passionate about making my city better! Active citizen helping to improve our community infrastructure.",
-  joinDate: "March 2023",
-  issuesReported: 12,
-  issuesResolved: 8,
-  profileImage: {
-    uri: "https://avatars.githubusercontent.com/u/100445654?v=4",
-  },
-  badgeLevel: "Gold Citizen",
-  points: 850,
-};
 
 // Sample activity data
 const ACTIVITIES: Activity[] = [
@@ -84,29 +83,62 @@ const ACTIVITIES: Activity[] = [
   },
 ];
 
-const STATS = [
-  {
-    title: "Issues Reported",
-    value: USER_DATA.issuesReported,
-    icon: "📝",
-  },
-  {
-    title: "Issues Resolved",
-    value: USER_DATA.issuesResolved,
-    icon: "✅",
-  },
-  {
-    title: "Success Rate",
-    value: `${Math.round(
-      (USER_DATA.issuesResolved / USER_DATA.issuesReported) * 100
-    )}%`,
-    icon: "📊",
-  },
-];
-
 const ProfileScreen = () => {
   const [activeTab, setActiveTab] = useState("overview");
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [userData, setUserData] = useState(DEFAULT_USER_DATA);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      const user = await getUser();
+
+      if (user) {
+        // Map API user data to our UI format
+        setUserData({
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phoneNumber,
+          location: `${user.district}, ${user.state}`,
+          bio: "Citizen helping to improve community infrastructure.",
+          joinDate: new Date().getFullYear().toString(),
+          issuesReported: user.reputation?.totalReports || 0,
+          issuesResolved: user.reputation?.resolvedReports || 0,
+          profileImage:
+            user.name == "Priyanshu Rana" //TODO: Remove all these checks lateron
+              ? {
+                  uri: "https://avatars.githubusercontent.com/u/100445654?v=4",
+                }
+              : LOGO,
+          badgeLevel:
+            user.name == "Priyanshu Rana"
+              ? getUserLevel(1000)
+              : getUserLevel(user.reputation?.score || 0),
+          points:
+            user.name == "Priyanshu Rana" ? 1000 : user.reputation?.score || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to determine user level based on reputation score
+  const getUserLevel = (score: number): string => {
+    if (score >= 1000) return "Gold Citizen";
+    if (score >= 500) return "Silver Citizen";
+    if (score >= 100) return "Bronze Citizen";
+    return "New Citizen";
+  };
 
   const handleLogout = async () => {
     Alert.alert(
@@ -124,7 +156,7 @@ const ProfileScreen = () => {
               await logout();
               navigation.reset({
                 index: 0,
-                routes: [{ name: 'Login' }],
+                routes: [{ name: "Login" }],
               });
             } catch (error) {
               console.error("Logout error:", error);
@@ -178,6 +210,40 @@ const ProfileScreen = () => {
     }
   };
 
+  // Calculate success rate
+  const successRate =
+    userData.issuesReported > 0
+      ? Math.round((userData.issuesResolved / userData.issuesReported) * 100)
+      : 0;
+
+  // Stats to display
+  const STATS = [
+    {
+      title: "Issues Reported",
+      value: userData.issuesReported,
+      icon: "📝",
+    },
+    {
+      title: "Issues Resolved",
+      value: userData.issuesResolved,
+      icon: "✅",
+    },
+    {
+      title: "Success Rate",
+      value: `${successRate}%`,
+      icon: "📊",
+    },
+  ];
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4f46e5" />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" backgroundColor="transparent" translucent />
@@ -195,20 +261,17 @@ const ProfileScreen = () => {
         </View>
         <View style={styles.profileHeader}>
           <View style={styles.profileImageContainer}>
-            <Image
-              source={USER_DATA.profileImage}
-              style={styles.profileImage}
-            />
+            <Image source={userData.profileImage} style={styles.profileImage} />
             <View style={styles.badgeContainer}>
-              <Text style={styles.badgeText}>{USER_DATA.badgeLevel}</Text>
+              <Text style={styles.badgeText}>{userData.badgeLevel}</Text>
             </View>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{USER_DATA.name}</Text>
-            <Text style={styles.profileLocation}>{USER_DATA.location}</Text>
+            <Text style={styles.profileName}>{userData.name}</Text>
+            <Text style={styles.profileLocation}>{userData.location}</Text>
             <View style={styles.pointsContainer}>
               <Text style={styles.pointsLabel}>Points:</Text>
-              <Text style={styles.pointsValue}>{USER_DATA.points}</Text>
+              <Text style={styles.pointsValue}>{userData.points}</Text>
             </View>
           </View>
         </View>
@@ -279,10 +342,10 @@ const ProfileScreen = () => {
             {/* Bio Section */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>About Me</Text>
-              <Text style={styles.bioText}>{USER_DATA.bio}</Text>
+              <Text style={styles.bioText}>{userData.bio}</Text>
               <View style={styles.joinedContainer}>
                 <Text style={styles.joinedText}>
-                  Joined {USER_DATA.joinDate}
+                  Joined {userData.joinDate}
                 </Text>
               </View>
             </View>
@@ -306,17 +369,17 @@ const ProfileScreen = () => {
               <Text style={styles.sectionTitle}>Contact Information</Text>
               <View style={styles.contactItem}>
                 <Text style={styles.contactLabel}>Email</Text>
-                <Text style={styles.contactValue}>{USER_DATA.email}</Text>
+                <Text style={styles.contactValue}>{userData.email}</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.contactItem}>
                 <Text style={styles.contactLabel}>Phone</Text>
-                <Text style={styles.contactValue}>{USER_DATA.phone}</Text>
+                <Text style={styles.contactValue}>{userData.phone}</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.contactItem}>
                 <Text style={styles.contactLabel}>Location</Text>
-                <Text style={styles.contactValue}>{USER_DATA.location}</Text>
+                <Text style={styles.contactValue}>{userData.location}</Text>
               </View>
             </View>
           </View>
@@ -449,13 +512,13 @@ const ProfileScreen = () => {
                         style={[
                           styles.progressBar,
                           {
-                            width: `${(USER_DATA.issuesReported / 20) * 100}%`,
+                            width: `${(userData.issuesReported / 20) * 100}%`,
                           },
                         ]}
                       />
                     </View>
                     <Text style={styles.progressText}>
-                      {USER_DATA.issuesReported}/20 Completed
+                      {userData.issuesReported}/20 Completed
                     </Text>
                   </View>
                 </View>
@@ -475,12 +538,12 @@ const ProfileScreen = () => {
                       <View
                         style={[
                           styles.progressBar,
-                          { width: `${(USER_DATA.points / 1000) * 100}%` },
+                          { width: `${(userData.points / 1000) * 100}%` },
                         ]}
                       />
                     </View>
                     <Text style={styles.progressText}>
-                      {USER_DATA.points}/1000 Points
+                      {userData.points}/1000 Points
                     </Text>
                   </View>
                 </View>
@@ -491,10 +554,7 @@ const ProfileScreen = () => {
       </ScrollView>
 
       {/* Add Logout Button at the bottom of the screen */}
-      <TouchableOpacity 
-        style={styles.logoutButton} 
-        onPress={handleLogout}
-      >
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -893,6 +953,17 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontWeight: "600",
     fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4f46e5",
+    marginTop: 16,
   },
 });
 

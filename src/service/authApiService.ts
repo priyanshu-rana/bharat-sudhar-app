@@ -1,30 +1,8 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
-
-const getApiBaseUrl = () => {
-  if (__DEV__) {
-    // return `http://{{DEVICE_IP}}:8080/auth`; //IMP: Add Device IP
-
-    return `http://{{DEVICE_IP}}:8080/auth`; //IMP: Add Device IP
-
-    /* 
-    // The following can be uncommented when you have proper server setup for emulators
-    if (Platform.OS === 'android') {
-      // 10.0.2.2 is for Android emulator - only works if your server is properly configured
-      return "http://10.0.2.2:8080/auth";
-    } else if (Platform.OS === 'ios') {
-      // iOS simulator can use localhost
-      return "http://localhost:8080/auth";
-    }
-    */
-  } else {
-    return "https://api.bharatsudhar.com/auth"; //TODO: Add Prod BE Url
-  }
-};
-
-const API_BASE_URL = getApiBaseUrl();
-
+// http://{{DEVICE_IP}}:8080/auth
+const API_BASE_URL = "https://bharat-sudhar-backend.onrender.com/auth";
 console.log("Using API URL:", API_BASE_URL);
 
 const authApiService = axios.create({
@@ -71,15 +49,36 @@ interface LoginData {
   password: string;
 }
 
+// Interface for User data
+export interface UserData {
+  _id: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  userStatus: string;
+  state: string;
+  district: string;
+  location: {
+    type: string;
+    coordinates: number[];
+    address: string;
+  };
+  reputation: {
+    score: number;
+    totalReports: number;
+    resolvedReports: number;
+    spamReports: number;
+  };
+  emergencyContacts: any[];
+  __v: number;
+}
+
 // Interface for API responses
 interface ApiResponse {
   success: boolean;
   message: string;
   jwtToken?: string;
-  user?: {
-    name: string;
-    email: string;
-  };
+  user?: UserData;
 }
 
 // Signup API call
@@ -123,10 +122,7 @@ export const getToken = async (): Promise<string | null> => {
 };
 
 // Get stored user
-export const getUser = async (): Promise<{
-  name: string;
-  email: string;
-} | null> => {
+export const getUser = async (): Promise<UserData | null> => {
   const user = await AsyncStorage.getItem("user");
   return user ? JSON.parse(user) : null;
 };
