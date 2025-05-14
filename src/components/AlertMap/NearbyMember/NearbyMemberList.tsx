@@ -3,7 +3,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { NearbyMemberStyles } from "./NearbyMemberStylesheet";
 
 export interface UserType {
-  id: number;
+  id: string | number;
   lat: number;
   lon: number;
   name: string;

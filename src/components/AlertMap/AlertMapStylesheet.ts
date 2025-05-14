@@ -40,4 +40,17 @@ export const AlertMapStyles = StyleSheet.create({
   controls: { padding: 20, backgroundColor: "white" },
   slider: { width: "100%", height: 40 },
   radiusText: { fontSize: 16, marginBottom: 10, textAlign: "center" },
+  returnToAlertsButton: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    backgroundColor: '#3b82f6',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  returnToAlertsText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
 });
