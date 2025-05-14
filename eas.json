@@ -1,7 +1,8 @@
 {
   "cli": {
     "version": ">= 0.34.0",
-    "requireCommit": false
+    "requireCommit": false,
+    "appVersionSource": "remote"
   },
   "build": {
     "preview": {
@@ -9,6 +10,17 @@
         "buildType": "apk",
         "ndk": "26.1.10909125",
         "gradleCommand": "clean :app:assembleDebug"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://example.com"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "autoIncrement": true,
+        "distribution": "store"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://example.com"
