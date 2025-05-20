@@ -123,32 +123,8 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
     return issue.status === activeFilter;
   });
 
-  // Function to add new issue
-  const addNewIssue = async (newIssue: any) => {
-    try {
-      // Process image if it's a string URI
-      if (typeof newIssue.image === "string") {
-        // For now, we'll just use the default image based on category
-        newIssue.image =
-          IMAGES[newIssue.category as keyof typeof IMAGES] || IMAGES.other;
-      }
-
-      const updatedIssues = [...issues, newIssue];
-      setIssues(updatedIssues);
-
-      // Save to AsyncStorage
-      await AsyncStorage.setItem(
-        "reportedIssues",
-        JSON.stringify(updatedIssues)
-      );
-    } catch (error) {
-      console.error("Failed to save new issue:", error);
-    }
-  };
-
-  // Function to navigate to ReportIssueScreen with addNewIssue function
   const navigateToReportIssue = () => {
-    navigation.navigate("ReportIssue", { addNewIssue });
+    navigation.navigate("ReportIssue");
   };
 
   const renderIssueItem = ({ item }: { item: any }) => (

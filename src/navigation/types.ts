@@ -1,14 +1,10 @@
 export type RootStackParamList = {
-  Onboarding: undefined;
   Login: undefined;
-  Signup: undefined;
+  SignUp: undefined;
   Home: undefined;
+  ReportIssue: undefined;
   Dashboard: undefined;
-  ReportIssue:
-    | {
-        addNewIssue?: (issue: any) => void;
-      }
-    | undefined;
+  Alerts: undefined;
   Profile: undefined;
   Settings: undefined;
 };
