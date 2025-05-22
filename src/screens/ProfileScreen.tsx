@@ -17,7 +17,7 @@ import { StatusType } from "../navigation/types";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
-import { logout, getUser, UserData } from "../service/authApiService";
+import { logout, getUser } from "../service/authApiService";
 
 const LOGO = require("../../assets/AppIcon.png");
 

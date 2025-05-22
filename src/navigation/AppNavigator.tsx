@@ -6,7 +6,7 @@ import { View, StyleSheet } from "react-native";
 import HomeScreen from "../screens/HomeScreen";
 import ReportIssueScreen from "../screens/ReportIssueScreen";
 import DashboardScreen from "../screens/DashboardScreen";
-import AlertsScreen from "../screens/AlertsScreen";
+import AlertsScreen from "../screens/AlertScreen/AlertsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import Navbar from "../components/Navbar";
