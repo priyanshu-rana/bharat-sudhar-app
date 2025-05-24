@@ -12,8 +12,9 @@ import {
   Alert,
 } from "react-native";
 import * as Location from "expo-location";
-import { createSOSAlert } from "../service/sosApiService";
 import Slider from "@react-native-community/slider";
+import AlertStore from "../store/AlertStore";
+import { observer } from "mobx-react-lite";
 
 const EMERGENCY_TYPES = [
   { id: "medical", label: "Medical", color: "#f44336" },
@@ -96,7 +97,7 @@ const CreateSOSAlert = ({
       setIsLoading(true);
       setError(null);
 
-      console.log("Sending SOS alert with data:", {
+      const alertData = {
         userId,
         location: {
           coordinates: [location.coords.longitude, location.coords.latitude],
@@ -104,20 +105,23 @@ const CreateSOSAlert = ({
         emergencyType: selectedType,
         description: description.trim(),
         radius: alertRadius,
-      });
+      };
 
-      // Create the alert with userId in the request body to match API expectations
-      await createSOSAlert({
+      console.log("Sending SOS alert with data:", alertData);
+
+      await AlertStore.createAlert(
         userId,
-        location: {
+        {
           coordinates: [location.coords.longitude, location.coords.latitude],
         },
-        emergencyType: selectedType,
-        description: description.trim(),
-        radius: alertRadius,
-      });
+        selectedType,
+        description,
+        AlertStore.nearbyUsers
+        // alertRadius
+      );
 
       setIsLoading(false);
+      Alert.alert("Success", "Alert sent to nearby users!");
 
       // Reset form
       setSelectedType("");
@@ -134,11 +138,7 @@ const CreateSOSAlert = ({
 
       let errorMessage = "Failed to create SOS alert. Please try again.";
 
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
+      if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
 
@@ -147,6 +147,23 @@ const CreateSOSAlert = ({
     }
   };
 
+  const handleSliderValueChange = (radius: number) => {
+    if (location) {
+      AlertStore.loadNearbyUsers(
+        [location.coords.longitude, location.coords.latitude],
+        radius,
+        userId
+      );
+    }
+
+    setAlertRadius(radius);
+  };
+
+  const getUserCountText = () => {
+    const userCount = AlertStore.nearbyUsers.length;
+    if (!location) return "";
+    return `(${userCount} ${userCount === 1 ? "person" : "people"} found)`;
+  };
   return (
     <Modal
       visible={visible}
@@ -193,7 +210,8 @@ const CreateSOSAlert = ({
           />
 
           <Text style={styles.label}>
-            Alert Radius: {alertRadius / 1000} km
+            Alert Radius: {alertRadius / 1000} km{", "}
+            {`${getUserCountText()}`}
           </Text>
           <Slider
             style={styles.slider}
@@ -201,11 +219,12 @@ const CreateSOSAlert = ({
             maximumValue={50000}
             step={500}
             value={alertRadius}
-            onValueChange={(value) => setAlertRadius(value)}
+            onValueChange={handleSliderValueChange}
             minimumTrackTintColor="#4f46e5"
             maximumTrackTintColor="#d3d3d3"
             thumbTintColor="#4f46e5"
           />
+
           <Text style={styles.radiusDescription}>
             Choose how far to broadcast your alert (500m to 50km)
           </Text>
@@ -223,22 +242,22 @@ const CreateSOSAlert = ({
               onPress={onClose}
               disabled={isLoading}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.button,
                 styles.submitButton,
-                (isLoading || !location) && styles.disabledButton,
+                (isLoading || !location || !userId) && styles.disabledButton,
               ]}
               onPress={handleSubmit}
-              disabled={isLoading || !location}
+              disabled={isLoading || !location || !userId}
             >
               {isLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>Send Alert</Text>
+                <Text style={styles.sendButtonText}>Send Alert</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -345,8 +364,13 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: "#a0a0a0",
   },
-  buttonText: {
+  sendButtonText: {
     fontWeight: "bold",
+    color: "white",
+  },
+  cancelButtonText: {
+    fontWeight: "bold",
+    color: "#000",
   },
   errorContainer: {
     backgroundColor: "#ffebee",
@@ -359,4 +383,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CreateSOSAlert;
+export default observer(CreateSOSAlert);

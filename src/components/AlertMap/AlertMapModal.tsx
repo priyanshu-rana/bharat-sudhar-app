@@ -3,18 +3,20 @@ import { Modal, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Circle, Marker } from "react-native-maps";
 import { AlertMapStyles } from "./AlertMapStylesheet";
 import * as Location from "expo-location";
+import { observer } from "mobx-react-lite";
+import AlertStore from "../../store/AlertStore";
 
 interface AlertMapModalProps {
   showMap: boolean;
   location: Location.LocationObject | null;
-  radius: number;
+  // radius: number;
   handleMapClose: () => void;
 }
 
 const AlertMapModal = ({
   showMap,
   location,
-  radius,
+  // radius,
   handleMapClose,
 }: AlertMapModalProps) => {
   return (
@@ -42,8 +44,22 @@ const AlertMapModal = ({
                 pinColor="blue"
               />
 
+              {/*Active Alerts*/}
+              {AlertStore.activeAlerts.map((alert) => (
+                <Marker
+                  key={alert.id}
+                  coordinate={{
+                    latitude: alert.location.coordinates[1], // **Not Tested**
+                    longitude: alert.location.coordinates[0], // **Not Tested**
+                  }}
+                  title={`Emergency: ${alert.emergencyType}`}
+                  description={alert.description}
+                  pinColor="red"
+                />
+              ))}
+
               {/* Radius Circle */}
-              <Circle
+              {/* <Circle
                 center={{
                   latitude: location.coords.latitude,
                   longitude: location.coords.longitude,
@@ -51,7 +67,7 @@ const AlertMapModal = ({
                 radius={radius * 1000} //Converting radius from km to meters
                 strokeColor="rgba(0, 150, 255, 0.5)"
                 fillColor="rgba(0, 150, 255, 0.2)"
-              />
+              /> */}
 
               {/* Nearby Users */}
               {/*nearbyUsers.map((user) => (
@@ -105,4 +121,4 @@ const AlertMapModal = ({
   );
 };
 
-export default AlertMapModal;
+export default observer(AlertMapModal);

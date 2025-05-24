@@ -47,6 +47,17 @@ export const AlertScreenStyles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 14,
   },
+  sosButton: {
+    backgroundColor: "red",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 30,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
   refreshButton: {
     backgroundColor: "#3b82f6",
     paddingVertical: 8,
