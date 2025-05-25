@@ -1,6 +1,9 @@
 import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { NavigationContainer, RouteProp } from "@react-navigation/native";
+import {
+  createNativeStackNavigator,
+  NativeStackNavigationProp,
+} from "@react-navigation/native-stack";
 import { View, StyleSheet } from "react-native";
 
 import HomeScreen from "../screens/HomeScreen";
@@ -14,6 +17,7 @@ import Navbar from "../components/Navbar";
 import { RootStackParamList } from "./types";
 import LoginScreen from "../screens/LoginScreen/LoginScreen";
 import SignUpScreen from "../screens/LoginScreen/SignupScreen";
+import AlertDetailsScreen from "../screens/AlertDetailsScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -38,6 +42,20 @@ const AlertsWithNavbar = ({ navigation }: any) => (
     <Navbar />
   </View>
 );
+
+// type AlertDetailsScreenProps = {
+//   route: RouteProp<RootStackParamList, "AlertDetails">;
+//   navigation: NativeStackNavigationProp<RootStackParamList, "AlertDetails">;
+// };
+
+const AlertDetailsWithNavbar = ({ route, navigation }: any) => {
+  return (
+    <View style={styles.screen}>
+      <AlertDetailsScreen navigation={navigation} route={route} />
+      <Navbar />
+    </View>
+  );
+};
 
 const ProfileWithNavbar = ({ navigation }: any) => (
   <View style={styles.screen}>
@@ -68,6 +86,7 @@ const AppNavigator = () => {
         <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
         <Stack.Screen name="Dashboard" component={DashboardWithNavbar} />
         <Stack.Screen name="Alerts" component={AlertsWithNavbar} />
+        <Stack.Screen name="AlertDetails" component={AlertDetailsWithNavbar} />
         <Stack.Screen name="Profile" component={ProfileWithNavbar} />
         <Stack.Screen name="Settings" component={SettingsWithNavbar} />
       </Stack.Navigator>

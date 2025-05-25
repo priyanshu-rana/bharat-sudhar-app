@@ -5,12 +5,11 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Image,
-  Alert,
-  Linking,
+  FlatList,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../navigation/types";
+import { AlertType, RootStackParamList } from "../../navigation/types";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import AlertMapModal from "../../components/AlertMap/AlertMapModal";
@@ -20,6 +19,8 @@ import { getUser, UserData } from "../../service/authApiService";
 import AlertStore from "../../store/AlertStore";
 import { observer } from "mobx-react-lite";
 import CreateSOSAlert from "../../components/CreateSOSAlert";
+import RespondAlertModal from "../../components/RespondAlertModal/RespondAlertModal";
+
 const LOGO = require("../../../assets/AppIcon.png");
 
 type AlertsScreenProps = {
@@ -30,11 +31,14 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
   const [location, setLocation] = useState<Location.LocationObject | null>(
     null
   );
-  // const [radius, setRadius] = useState(1);
   const [showMap, setShowMap] = useState(false);
   const [showSOSCreateModal, setShowSOSCreateModal] = useState(false);
   const [user, setUser] = useState<UserData | null>();
   let userId = user?._id;
+
+  const [isRespondModalVisible, setIsRespondModalVisible] = useState(false);
+  const [currentRespondingAlert, setCurrentRespondingAlert] =
+    useState<AlertType | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -55,17 +59,7 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
       try {
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          Alert.alert(
-            "Location Permission Required",
-            "Please enable location services in settings to use this feature",
-            [
-              {
-                text: "Open Settings",
-                onPress: () => Linking.openSettings(),
-              },
-              { text: "Cancel", style: "cancel" },
-            ]
-          );
+          console.warn("Location permission not granted.");
           return;
         }
 
@@ -109,30 +103,27 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
         await initializeSocket();
         const socket = getSocket();
 
-        socket.on("connect", async () => {
+        const handleConnect = async () => {
           console.log("Socket connected");
-          const user = await getUser();
-          if (user?._id) {
-            socket.emit("registerUser", user._id);
+          const currentUser = await getUser();
+          if (currentUser?._id) {
+            socket.emit("registerUser", currentUser._id);
           }
-        });
+        };
 
-        socket.on("sosAlert", (alert) => {
-          console.log("SOS Alert received:", alert);
-          AlertStore.addAlert(alert);
+        const handleSosAlert = (alertData: AlertType) => {
+          console.log("SOS Alert received on screen:", alertData);
+          AlertStore.addAlert(alertData);
           if (navigation.isFocused()) {
-            // Show notification or update UI
-            Alert.alert("SOS Alert", `Emergency: ${alert.emergencyType}`, [
-              {
-                text: "View",
-                // onPress: () => {
-                //   navigation.navigate("AlertDetails", { alert });
-                // },
-              },
-              { text: "Cancel", style: "cancel" },
-            ]);
+            setCurrentRespondingAlert(alertData);
+            setIsRespondModalVisible(true);
           }
-        });
+        };
+
+        socket.on("connect", handleConnect);
+        socket.on("sosAlert", handleSosAlert);
+
+        AlertStore.initializeSocketListeners();
       } catch (error) {
         console.error("Socket setup error:", error);
       }
@@ -140,13 +131,72 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
     setupSocket();
 
     return () => {
-      // Cleanup on unmount
-      const socket = getSocket();
-      socket?.off("connect");
-      socket?.off("sosAlert");
-      AlertStore.clearAlerts();
+      try {
+        const socket = getSocket();
+        socket.off("connect");
+        socket.off("sosAlert");
+        AlertStore.removeSocketListeners();
+        console.log(
+          "AlertsScreen: Socket and AlertStore listeners cleaned up."
+        );
+      } catch (error) {
+        console.warn("AlertsScreen: Error during socket cleanup:", error);
+      }
     };
-  }, []);
+  }, [navigation]);
+
+  const getAlertItemStyle = (emergencyType: string) => {
+    switch (emergencyType?.toLowerCase()) {
+      case "medical":
+        return AlertScreenStyles.medicalAlert;
+      case "safety":
+        return AlertScreenStyles.safetyAlert;
+      default:
+        return AlertScreenStyles.otherAlert;
+    }
+  };
+
+  const renderAlertItem = ({ item }: { item: AlertType }) => {
+    const typeSpecificStyle = getAlertItemStyle(item.emergencyType);
+    return (
+      <TouchableOpacity
+        style={[
+          AlertScreenStyles.alertItem,
+          { borderLeftColor: typeSpecificStyle.borderLeftColor },
+        ]}
+        onPress={() =>
+          navigation.navigate("AlertDetails", { alertId: item._id })
+        }
+      >
+        <View style={AlertScreenStyles.alertItemHeader}>
+          <Text
+            style={[
+              AlertScreenStyles.alertType,
+              { color: typeSpecificStyle.color },
+            ]}
+          >
+            {item.emergencyType.charAt(0).toUpperCase() +
+              item.emergencyType.slice(1)}
+          </Text>
+          <Text style={AlertScreenStyles.alertTimestamp}>
+            {new Date(item.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}{" "}
+            - {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
+        </View>
+        <Text style={AlertScreenStyles.alertDescription} numberOfLines={2}>
+          {item.description || "No description provided."}
+        </Text>
+        {/* Add location snippet or other details if available and desired */}
+        {/* <Text style={AlertScreenStyles.alertLocationSnippet}>{`Location: ${item.location.coordinates[1]}, ${item.location.coordinates[0]}`}</Text> */}
+        <View style={AlertScreenStyles.alertFooter}>
+          <Text style={AlertScreenStyles.viewDetailsHint}>View Details →</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={AlertScreenStyles.container}>
@@ -159,11 +209,10 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
       >
         <View style={AlertScreenStyles.headerTop}>
           <Image source={LOGO} style={AlertScreenStyles.headerLogo} />
-          <Text style={AlertScreenStyles.headerTitle}>SOS Alert</Text>
+          <Text style={AlertScreenStyles.headerTitle}>SOS Alerts</Text>
         </View>
       </LinearGradient>
 
-      {/* View Map Button */}
       <View style={AlertScreenStyles.buttonContainer}>
         <TouchableOpacity
           style={AlertScreenStyles.viewMapButton}
@@ -173,7 +222,6 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
         </TouchableOpacity>
       </View>
 
-      {/* Create SOS Alert Button */}
       <View style={AlertScreenStyles.buttonContainer}>
         <TouchableOpacity
           style={AlertScreenStyles.sosButton}
@@ -183,28 +231,46 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
         </TouchableOpacity>
       </View>
 
-      {/* Map Modal */}
       <AlertMapModal
         showMap={showMap}
         location={location}
-        // radius={radius}
         handleMapClose={() => setShowMap(false)}
       />
 
-      {/* SOS Create Modal */}
       <CreateSOSAlert
         userId={userId!}
         visible={showSOSCreateModal}
         onClose={() => setShowSOSCreateModal(false)}
-        onSuccess={() =>
-          Alert.prompt(
-            "Alert Sent",
-            "Your SOS alert has been sent successfully!"
-          )
+        onSuccess={() => {
+          console.log("SOS alert has been sent successfully!");
+        }}
+      />
+
+      <RespondAlertModal
+        visible={isRespondModalVisible}
+        alert={currentRespondingAlert}
+        currentUserId={userId}
+        onClose={() => {
+          setIsRespondModalVisible(false);
+          setCurrentRespondingAlert(null);
+        }}
+        onViewDetails={(alertId) => {
+          setIsRespondModalVisible(false);
+          setCurrentRespondingAlert(null);
+          navigation.navigate("AlertDetails", { alertId });
+        }}
+      />
+
+      <FlatList
+        data={AlertStore.activeAlerts}
+        keyExtractor={(item) => item._id}
+        renderItem={renderAlertItem}
+        contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 10 }}
+        ListEmptyComponent={
+          <Text style={AlertScreenStyles.emptyListText}>
+            No active alerts nearby.
+          </Text>
         }
-        // onSuccess={() => {
-        //   AlertStore.loadNearbyUsers(location?.coords, radius);
-        // }}
       />
     </SafeAreaView>
   );

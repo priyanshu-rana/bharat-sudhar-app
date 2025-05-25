@@ -1,31 +1,63 @@
 import { action, makeAutoObservable } from "mobx";
 import { getSocket } from "../service/socketService";
-import { createSOSAlert, loadNearbyUsers } from "../service/sosApiService";
+import {
+  createSOSAlert,
+  loadNearbyUsers,
+  respondToAlert,
+} from "../service/sosApiService";
+import { AlertType, SOSStatusType } from "../navigation/types";
 
 // TODO : Add types/models for the alert and user data
 class AlertStore {
-  activeAlerts: any[] = [];
+  activeAlerts: AlertType[] = [];
   nearbyUsers: any[] = [];
-  currentAlert: any = null;
+  currentAlert: AlertType | null = null;
   isLoading: boolean = false;
 
   constructor() {
     makeAutoObservable(this);
-    // this.initializeSocket();
   }
 
-  initializeSocket() {
-    const socket = getSocket();
+  private handleRespondAlert = (update: any) => {
+    this.updateAlertResponders(update);
+  };
 
-    // socket.on("sosAlert", (alert: any) => {
-    //   this.addAlert(alert);
-    // });
-    socket.on("sosAlert", this.addAlert);
+  public initializeSocketListeners() {
+    try {
+      const socket = getSocket();
+      socket.off("respondAlert", this.handleRespondAlert);
+      socket.on("respondAlert", this.handleRespondAlert);
+      console.log("AlertStore: Socket listeners initialized for respondAlert.");
+    } catch (error) {
+      console.error("AlertStore: Failed to initialize socket listeners", error);
+    }
+  }
+
+  public removeSocketListeners() {
+    try {
+      const socket = getSocket();
+      socket.off("respondAlert", this.handleRespondAlert);
+      console.log("AlertStore: Socket listeners removed for respondAlert.");
+    } catch (error) {
+      console.warn(
+        "AlertStore: Failed to remove socket listeners (socket might not be initialized):",
+        error
+      );
+    }
   }
 
   @action
-  addAlert(alert: any) {
-    this.activeAlerts = [...this.activeAlerts, alert];
+  addAlert(alert: AlertType) {
+    const existingAlertIndex = this.activeAlerts.findIndex(
+      (a) => a._id === alert._id
+    );
+    if (existingAlertIndex === -1) {
+      this.activeAlerts = [...this.activeAlerts, alert];
+    } else {
+      console.log(
+        `AlertStore: Alert with ID ${alert._id} already exists. Not adding duplicate.`
+      );
+    }
   }
 
   @action
@@ -71,6 +103,40 @@ class AlertStore {
       this.nearbyUsers = await loadNearbyUsers({ coordinates, radius, userId });
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  @action
+  async respondToAlert(
+    alertId: string,
+    userId: string,
+    status?: SOSStatusType
+  ) {
+    try {
+      const response = await respondToAlert({ alertId, userId, status });
+
+      const alertIndex = this.activeAlerts.findIndex((a) => a._id === alertId);
+      if (alertIndex > -1 && response.data) {
+        this.activeAlerts[alertIndex] = {
+          ...this.activeAlerts[alertIndex],
+          ...response.data,
+        };
+      }
+      return this.activeAlerts[alertIndex];
+    } catch (error) {
+      console.error("Respond to alert error:", error);
+      throw error;
+    }
+  }
+
+  @action
+  updateAlertResponders(update: any) {
+    const index = this.activeAlerts.findIndex((a) => a._id === update.alertId);
+    if (index > -1) {
+      this.activeAlerts[index] = {
+        ...this.activeAlerts[index],
+        responders: update.data.responders,
+      };
     }
   }
 }

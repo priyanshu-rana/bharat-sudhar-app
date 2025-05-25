@@ -1,4 +1,5 @@
 import axios from "axios";
+import { SOSStatusType } from "../navigation/types";
 
 // Base URL configuration
 const DEVICE_IP = "192.100.0.00"; // Your local IP address
@@ -100,19 +101,19 @@ export const createSOSAlert = async (data: {
 };
 
 // // Respond to an SOS alert
-// export const respondToAlert = async (data: {
-//   alertId: string;
-//   userId: string;
-//   status?: string;
-// }) => {
-//   try {
-//     const response = await sosApiService.post("/sos/respond", data);
-//     return response.data;
-//   } catch (error: any) {
-//     console.error("Respond to alert error:", error.message);
-//     throw error;
-//   }
-// };
+export const respondToAlert = async (data: {
+  alertId: string;
+  userId: string;
+  status?: SOSStatusType;
+}) => {
+  try {
+    const response = await sosApiService.post("/sos/respond", data);
+    return response.data;
+  } catch (error: any) {
+    console.error("Respond to alert error:", error.message);
+    throw error;
+  }
+};
 
 // // Close an SOS alert
 // export const closeAlert = async (
@@ -134,6 +135,6 @@ export default {
   getAllUsers,
   // getActiveAlerts,
   createSOSAlert,
-  // respondToAlert,
+  respondToAlert,
   // closeAlert,
 };

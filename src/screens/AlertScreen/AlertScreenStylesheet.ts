@@ -71,4 +71,70 @@ export const AlertScreenStyles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 14,
   },
+  alertItem: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 16,
+    marginVertical: 8,
+    marginHorizontal: 4,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    borderLeftWidth: 5,
+  },
+  alertItemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  alertType: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#3b82f6",
+  },
+  alertTimestamp: {
+    fontSize: 12,
+    color: "#666",
+  },
+  alertDescription: {
+    fontSize: 14,
+    color: "#333",
+    marginBottom: 10,
+  },
+  alertLocationSnippet: {
+    fontSize: 12,
+    color: "#777",
+    fontStyle: "italic",
+  },
+  alertFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 8,
+  },
+  viewDetailsHint: {
+    fontSize: 12,
+    color: "#3b82f6",
+    fontWeight: "600",
+  },
+  medicalAlert: {
+    borderLeftColor: "#e53935",
+    color: "#e53935",
+  },
+  safetyAlert: {
+    borderLeftColor: "#f57c00",
+    color: "#f57c00",
+  },
+  otherAlert: {
+    borderLeftColor: "#1e88e5",
+    color: "#1e88e5",
+  },
+  emptyListText: {
+    textAlign: 'center',
+    marginTop: 30,
+    fontSize: 16,
+    color: '#666',
+  }
 });

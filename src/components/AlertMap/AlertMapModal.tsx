@@ -47,7 +47,7 @@ const AlertMapModal = ({
               {/*Active Alerts*/}
               {AlertStore.activeAlerts.map((alert) => (
                 <Marker
-                  key={alert.id}
+                  key={alert._id}
                   coordinate={{
                     latitude: alert.location.coordinates[1], // **Not Tested**
                     longitude: alert.location.coordinates[0], // **Not Tested**
