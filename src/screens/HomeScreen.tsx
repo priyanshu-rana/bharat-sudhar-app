@@ -80,87 +80,13 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     },
   ]);
 
-  useEffect(() => {
-    // Load issues from AsyncStorage
-    const loadIssues = async () => {
-      try {
-        const storedIssues = await AsyncStorage.getItem("reportedIssues");
-        if (storedIssues) {
-          const allIssues = JSON.parse(storedIssues);
-          // Get the 3 most recent issues for the featured section
-          const recent = allIssues
-            .slice(-3)
-            .reverse()
-            .map((issue: any) => ({
-              id: issue.id,
-              title: issue.title,
-              location: issue.location,
-              votes: issue.upvotes || 0,
-              status: issue.status,
-              image:
-                IMAGES[issue.category as keyof typeof IMAGES] || IMAGES.other,
-              category: issue.category,
-            }));
-
-          if (recent.length > 0) {
-            setFeaturedIssues(recent);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load issues:", error);
-      }
-    };
-
-    loadIssues();
-  }, []);
-
   const handleImageError = (id: string) => {
     setFailedImages((prev) => ({ ...prev, [id]: true }));
   };
 
-  // Function to add new issue and navigate to ReportIssue screen
-  const addNewIssue = async (newIssue: any) => {
-    try {
-      // Process image if it's a string URI
-      if (typeof newIssue.image === "string") {
-        // Use the category image if available, otherwise use default logo
-        newIssue.image =
-          IMAGES[newIssue.category as keyof typeof IMAGES] || IMAGES.other;
-      }
-
-      // Get current issues from storage
-      const storedIssues = await AsyncStorage.getItem("reportedIssues");
-      const currentIssues = storedIssues ? JSON.parse(storedIssues) : [];
-
-      // Add new issue
-      const updatedIssues = [...currentIssues, newIssue];
-
-      // Save to AsyncStorage
-      await AsyncStorage.setItem(
-        "reportedIssues",
-        JSON.stringify(updatedIssues)
-      );
-
-      // Update featured issues
-      const newFeatured = {
-        id: newIssue.id,
-        title: newIssue.title,
-        location: newIssue.location,
-        votes: newIssue.upvotes || 0,
-        status: newIssue.status,
-        image: IMAGES[newIssue.category as keyof typeof IMAGES] || IMAGES.other,
-        category: newIssue.category,
-      };
-
-      setFeaturedIssues((prev) => [newFeatured, ...prev.slice(0, 2)]);
-    } catch (error) {
-      console.error("Failed to save new issue:", error);
-    }
-  };
-
   // Function to navigate to ReportIssueScreen with addNewIssue function
   const navigateToReportIssue = () => {
-    navigation.navigate("ReportIssue", { addNewIssue });
+    navigation.navigate("ReportIssue");
   };
 
   const statistics = [
@@ -257,12 +183,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
               >
                 {!failedImages[issue.id] && (
                   <Image
-                    source={
-                      typeof issue.image === "string"
-                        ? IMAGES[issue.category as keyof typeof IMAGES] ||
-                          IMAGES.other
-                        : issue.image
-                    }
+                    source={issue.image}
                     style={styles.issueImage}
                     resizeMode="cover"
                     onError={() => handleImageError(issue.id)}

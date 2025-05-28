@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavigationContainer, RouteProp } from "@react-navigation/native";
 import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
 } from "@react-navigation/native-stack";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
 
 import HomeScreen from "../screens/HomeScreen";
 import ReportIssueScreen from "../screens/ReportIssueScreen";
@@ -18,6 +18,8 @@ import { RootStackParamList } from "./types";
 import LoginScreen from "../screens/LoginScreen/LoginScreen";
 import SignUpScreen from "../screens/LoginScreen/SignupScreen";
 import AlertDetailsScreen from "../screens/AlertDetailsScreen";
+
+import { getUser } from "../service/authApiService";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -72,10 +74,34 @@ const SettingsWithNavbar = ({ navigation }: any) => (
 );
 
 const AppNavigator = () => {
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const user = await getUser();
+        setIsUserLoggedIn(!!user);
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        setIsUserLoggedIn(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  if (isUserLoggedIn === null) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName={isUserLoggedIn ? "Home" : "Login"}
         screenOptions={{
           headerShown: false,
         }}
@@ -97,6 +123,11 @@ const AppNavigator = () => {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

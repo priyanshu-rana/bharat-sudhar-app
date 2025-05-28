@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -166,7 +167,10 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
       <TouchableOpacity
         style={[
           AlertScreenStyles.alertItem,
-          { borderLeftColor: typeSpecificStyle.borderLeftColor },
+          { 
+            borderLeftColor: typeSpecificStyle.borderLeftColor,
+            backgroundColor: typeSpecificStyle.backgroundColor,
+          },
         ]}
         onPress={() =>
           navigation.navigate("AlertDetails", { alertId: item._id })
@@ -217,16 +221,13 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
         </View>
       </LinearGradient>
 
-      <View style={AlertScreenStyles.buttonContainer}>
+      <View style={AlertScreenStyles.actionButtonsContainer}>
         <TouchableOpacity
           style={AlertScreenStyles.viewMapButton}
           onPress={() => setShowMap(true)}
         >
           <Text style={AlertScreenStyles.viewMapButtonText}>View Map</Text>
         </TouchableOpacity>
-      </View>
-
-      <View style={AlertScreenStyles.buttonContainer}>
         <TouchableOpacity
           style={AlertScreenStyles.sosButton}
           onPress={() => setShowSOSCreateModal(true)}
@@ -271,9 +272,13 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
         renderItem={renderAlertItem}
         contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 10 }}
         ListEmptyComponent={
-          <Text style={AlertScreenStyles.emptyListText}>
-            No active alerts nearby.
-          </Text>
+          AlertStore.isLoading ? (
+            <ActivityIndicator size={"small"} />
+          ) : (
+            <Text style={AlertScreenStyles.emptyListText}>
+              No active alerts nearby.
+            </Text>
+          )
         }
       />
     </SafeAreaView>
