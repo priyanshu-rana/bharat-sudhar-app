@@ -132,9 +132,9 @@ export const AlertScreenStyles = StyleSheet.create({
     color: "#1e88e5",
   },
   emptyListText: {
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 30,
     fontSize: 16,
-    color: '#666',
-  }
+    color: "#666",
+  },
 });

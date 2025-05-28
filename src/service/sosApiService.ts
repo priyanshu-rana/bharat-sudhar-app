@@ -82,6 +82,18 @@ export const loadNearbyUsers = async (data: {
 //   }
 // };
 
+export const userInvolvedAlerts = async (userId: string) => {
+  try {
+    const response = await sosApiService.get(
+      `/sos/user/${userId}/involved-alerts`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Respond to alert error:", error.message);
+    throw error;
+  }
+};
+
 export const createSOSAlert = async (data: {
   userId: string;
   location: { coordinates: [number, number] };
@@ -136,5 +148,6 @@ export default {
   // getActiveAlerts,
   createSOSAlert,
   respondToAlert,
+  userInvolvedAlerts,
   // closeAlert,
 };

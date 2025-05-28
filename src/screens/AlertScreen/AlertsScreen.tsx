@@ -145,6 +145,10 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
     };
   }, [navigation]);
 
+  useEffect(() => {
+    if (userId) AlertStore.userInvolvedAlerts(userId);
+  }, [userId]);
+
   const getAlertItemStyle = (emergencyType: string) => {
     switch (emergencyType?.toLowerCase()) {
       case "medical":

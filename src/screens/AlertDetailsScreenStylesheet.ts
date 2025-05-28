@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native";
 import { AlertScreenStyles } from "./AlertScreen/AlertScreenStylesheet"; // Assuming this path is correct relative to the new stylesheet
+import { SOSStatusType } from "../navigation/types";
 
 export const AlertDetailsScreenStyles = StyleSheet.create({
   container: {
@@ -73,17 +74,17 @@ export const AlertDetailsScreenStyles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
     paddingVertical: 10,
-  }
+  },
 });
 
 // Function to get status color, can also be part of the stylesheet or a helper utils file
-export const getStatusColor = (status: string) => {
+export const getStatusColor = (status: SOSStatusType) => {
   switch (status?.toLowerCase()) {
-    case "accepted":
+    case SOSStatusType.ACCEPTED:
       return "#4CAF50"; // Green
-    case "declined":
+    case SOSStatusType.REJECTED:
       return "#f44336"; // Red
     default:
       return "#FFC107"; // Amber
   }
-}; 
+};

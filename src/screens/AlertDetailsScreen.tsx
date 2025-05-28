@@ -14,7 +14,10 @@ import AlertResponseButton from "../components/AlertResponseButton";
 import { getUser, UserData } from "../service/authApiService";
 import { observer } from "mobx-react-lite";
 import { AlertScreenStyles } from "./AlertScreen/AlertScreenStylesheet";
-import { AlertDetailsScreenStyles, getStatusColor } from "./AlertDetailsScreenStylesheet";
+import {
+  AlertDetailsScreenStyles,
+  getStatusColor,
+} from "./AlertDetailsScreenStylesheet";
 
 const LOGO = require("../../assets/AppIcon.png");
 
@@ -46,15 +49,20 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
           end={{ x: 1, y: 1 }}
         >
           <View style={AlertScreenStyles.headerTop}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10, padding: 5}}>
-                <Text style={{color: 'white', fontSize: 24}}>←</Text>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ marginRight: 10, padding: 5 }}
+            >
+              <Text style={{ color: "white", fontSize: 24 }}>←</Text>
             </TouchableOpacity>
             <Image source={LOGO} style={AlertScreenStyles.headerLogo} />
             <Text style={AlertScreenStyles.headerTitle}>Alert Details</Text>
           </View>
         </LinearGradient>
         <View style={AlertDetailsScreenStyles.contentContainer}>
-          <Text style={AlertDetailsScreenStyles.errorText}>Alert not found or an error occurred.</Text>
+          <Text style={AlertDetailsScreenStyles.errorText}>
+            Alert not found or an error occurred.
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -62,8 +70,15 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
 
   const renderResponderItem = ({ item }: { item: any }) => (
     <View style={AlertDetailsScreenStyles.responderItem}>
-      <Text style={AlertDetailsScreenStyles.responderName}>{item.userDetails?.name || "Unknown User"}</Text>
-      <Text style={[AlertDetailsScreenStyles.responderStatus, { color: getStatusColor(item.status) }]}>
+      <Text style={AlertDetailsScreenStyles.responderName}>
+        {item.userDetails?.name}
+      </Text>
+      <Text
+        style={[
+          AlertDetailsScreenStyles.responderStatus,
+          { color: getStatusColor(item.status) },
+        ]}
+      >
         {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
       </Text>
     </View>
@@ -79,9 +94,12 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
         end={{ x: 1, y: 1 }}
       >
         <View style={AlertScreenStyles.headerTop}>
-           <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10, padding: 5}}>
-                <Text style={{color: 'white', fontSize: 24}}>←</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{ marginRight: 10, padding: 5 }}
+          >
+            <Text style={{ color: "white", fontSize: 24 }}>←</Text>
+          </TouchableOpacity>
           <Image source={LOGO} style={AlertScreenStyles.headerLogo} />
           <Text style={AlertScreenStyles.headerTitle}>Alert Details</Text>
         </View>
@@ -89,29 +107,39 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
 
       <View style={AlertDetailsScreenStyles.contentContainer}>
         <View style={AlertDetailsScreenStyles.card}>
-          <Text style={AlertDetailsScreenStyles.cardTitle}>{alert.emergencyType} Alert</Text>
-          <Text style={AlertDetailsScreenStyles.descriptionText}>"{alert.description}"</Text>
+          <Text style={AlertDetailsScreenStyles.cardTitle}>
+            {alert.emergencyType} Alert
+          </Text>
+          <Text style={AlertDetailsScreenStyles.descriptionText}>
+            "{alert.description}"
+          </Text>
           <Text style={AlertDetailsScreenStyles.detailText}>
             Reported at: {new Date(alert.createdAt).toLocaleString()}
           </Text>
         </View>
-
+        {user && (
+          <View style={AlertDetailsScreenStyles.card}>
+            <Text style={AlertDetailsScreenStyles.sectionTitle}>
+              Your Response
+            </Text>
+            <AlertResponseButton alertId={alertId} userId={user._id} />
+          </View>
+        )}
         <View style={AlertDetailsScreenStyles.card}>
-          <Text style={AlertDetailsScreenStyles.sectionTitle}>Your Response</Text>
-          {user?._id && <AlertResponseButton alertId={alertId} userId={user._id} />}
-        </View>
-
-        <View style={AlertDetailsScreenStyles.card}>
-          <Text style={AlertDetailsScreenStyles.sectionTitle}>Responders ({alert.responders?.length || 0})</Text>
+          <Text style={AlertDetailsScreenStyles.sectionTitle}>
+            Responders ({alert.responders?.length || 0})
+          </Text>
           {alert.responders && alert.responders.length > 0 ? (
             <FlatList
               data={alert.responders}
               renderItem={renderResponderItem}
-              keyExtractor={(item) => item.userId}
+              keyExtractor={(item) => item.userDetails.id}
               style={AlertDetailsScreenStyles.responderList}
             />
           ) : (
-            <Text style={AlertDetailsScreenStyles.emptyText}>No responders yet.</Text>
+            <Text style={AlertDetailsScreenStyles.emptyText}>
+              No responders yet.
+            </Text>
           )}
         </View>
       </View>

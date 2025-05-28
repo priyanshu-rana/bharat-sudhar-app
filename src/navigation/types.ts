@@ -21,7 +21,11 @@ export enum SOSStatusType {
 export interface AlertType {
   _id: string;
   responders: Array<{
-    userId: string;
+    userDetails: {
+      id: string;
+      name: string;
+      phoneNumber: string;
+    };
     status: string;
   }>;
   emergencyType: string;

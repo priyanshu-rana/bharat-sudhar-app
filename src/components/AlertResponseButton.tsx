@@ -20,7 +20,7 @@ const AlertResponseButton = ({ alertId, userId }: AlertResponseProps) => {
 
   const currentResponse = AlertStore.activeAlerts
     .find((a) => a._id === alertId)
-    ?.responders?.find((r: any) => r.userId === userId);
+    ?.responders?.find((r: any) => r.userDetails.id === userId);
 
   const handleResponse = async (status: SOSStatusType) => {
     try {

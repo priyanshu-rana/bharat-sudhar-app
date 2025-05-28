@@ -4,6 +4,7 @@ import {
   createSOSAlert,
   loadNearbyUsers,
   respondToAlert,
+  userInvolvedAlerts,
 } from "../service/sosApiService";
 import { AlertType, SOSStatusType } from "../navigation/types";
 
@@ -137,6 +138,17 @@ class AlertStore {
         ...this.activeAlerts[index],
         responders: update.data.responders,
       };
+    }
+  }
+
+  @action
+  async userInvolvedAlerts(userId: string) {
+    try {
+      this.isLoading = true;
+      const response = await userInvolvedAlerts(userId);
+      this.activeAlerts = response;
+    } finally {
+      this.isLoading = false;
     }
   }
 }
