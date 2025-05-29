@@ -66,6 +66,15 @@ const CreateSOSAlert = ({
       });
 
       setLocation(userLocation);
+
+      // Load nearby users for the initial default radius once location is available
+      if (userLocation && userId) {
+        AlertStore.loadNearbyUsers(
+          [userLocation.coords.longitude, userLocation.coords.latitude],
+          alertRadius, // Default radius of 1000 meters
+          userId
+        );
+      }
       setIsLoading(false);
     } catch (error) {
       console.error("Error getting location:", error);
@@ -147,23 +156,17 @@ const CreateSOSAlert = ({
     }
   };
 
-  const handleSliderValueChange = (radius: number) => {
-    if (location) {
+  const handleSlidingComplete = (radius: number) => {
+    if (location && userId) {
       AlertStore.loadNearbyUsers(
         [location.coords.longitude, location.coords.latitude],
         radius,
         userId
       );
+      console.log("API calling onSlidingComplete for radius:", radius);
     }
-
-    setAlertRadius(radius);
   };
 
-  const getUserCountText = () => {
-    const userCount = AlertStore.nearbyUsers.length;
-    if (!location) return "";
-    return `(${userCount} ${userCount === 1 ? "person" : "people"} found)`;
-  };
   return (
     <Modal
       visible={visible}
@@ -209,17 +212,33 @@ const CreateSOSAlert = ({
             placeholderTextColor="#888"
           />
 
-          <Text style={styles.label}>
-            Alert Radius: {alertRadius / 1000} km{", "}
-            {`${getUserCountText()}`}
-          </Text>
+          <View style={styles.radiusInfoContainer}>
+            <Text style={styles.labelNoMargin}>
+              Alert Radius: {alertRadius / 1000} km
+            </Text>
+            {location &&
+              (AlertStore.isLoading ? (
+                <View style={styles.userCountLoadingContainer}>
+                  <ActivityIndicator size="small" color="#4f46e5" />
+                  <Text style={styles.loadingText}> Finding people...</Text>
+                </View>
+              ) : (
+                <Text style={styles.userCountText}>
+                  ({AlertStore.nearbyUsers.length}{" "}
+                  {AlertStore.nearbyUsers.length === 1 ? "person" : "people"}{" "}
+                  found)
+                </Text>
+              ))}
+          </View>
+
           <Slider
             style={styles.slider}
             minimumValue={500}
             maximumValue={50000}
             step={500}
             value={alertRadius}
-            onValueChange={handleSliderValueChange}
+            onValueChange={(radius) => setAlertRadius(radius)}
+            onSlidingComplete={handleSlidingComplete}
             minimumTrackTintColor="#4f46e5"
             maximumTrackTintColor="#d3d3d3"
             thumbTintColor="#4f46e5"
@@ -299,6 +318,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 10,
     marginBottom: 5,
+  },
+  labelNoMargin: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 10,
   },
   typeContainer: {
     flexDirection: "row",
@@ -380,6 +404,29 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "#d32f2f",
+  },
+  radiusInfoContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 0,
+  },
+  userCountLoadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  loadingText: {
+    marginLeft: 5,
+    fontSize: 14,
+    color: "#4f46e5",
+  },
+  userCountText: {
+    fontSize: 14,
+    color: "#333",
+    marginTop: 10,
+    marginLeft: 5,
   },
 });
 
