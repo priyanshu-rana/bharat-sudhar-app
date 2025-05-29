@@ -96,7 +96,7 @@ export const userInvolvedAlerts = async (userId: string) => {
 
 export const createSOSAlert = async (data: {
   userId: string;
-  location: { coordinates: [number, number] };
+  location: { coordinates: [number, number]; address?: string };
   emergencyType: string;
   description: string;
   nearbyUserIds?: string[];

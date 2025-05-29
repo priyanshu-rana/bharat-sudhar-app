@@ -1,6 +1,5 @@
 import { StyleSheet } from "react-native";
 import { AlertScreenStyles } from "./AlertScreen/AlertScreenStylesheet"; // Assuming this path is correct relative to the new stylesheet
-import { SOSStatusType } from "../navigation/types";
 
 export const AlertDetailsScreenStyles = StyleSheet.create({
   container: {
@@ -85,8 +84,8 @@ export const AlertDetailsScreenStyles = StyleSheet.create({
     overflow: "hidden", // Ensures text stays within rounded corners
     textAlign: "center",
     alignSelf: "flex-start", // Ensure badge only takes necessary width
-    flexDirection: 'row', // Add for icon and text
-    alignItems: 'center',  // Add for icon and text
+    flexDirection: "row", // Add for icon and text
+    alignItems: "center", // Add for icon and text
   },
   acceptedStatus: {
     backgroundColor: "#22c55e",
@@ -104,7 +103,58 @@ export const AlertDetailsScreenStyles = StyleSheet.create({
     backgroundColor: "#f59e0b", // Amber
     color: "#ffffff",
   },
-  iconStyle: { // New style for icons
-    marginRight: 5, // Slightly less margin for potentially smaller badges
+  iconStyle: {
+    marginRight: 5,
+  },
+  victimDetailsContainer: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 8,
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 4,
+  },
+  victimName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1f2937",
+    marginLeft: 8,
+  },
+  victimPhone: {
+    fontSize: 16,
+    color: "blue",
+    marginLeft: 8,
+  },
+  victimPhoneTooltip: {
+    fontSize: 12,
+    marginLeft: 8,
+    fontStyle: "italic",
+    fontWeight: "500",
+    color: "#6b7280", // Gray color for tooltip text
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  typeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  typeIcon: {
+    marginRight: 8,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  timeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
   },
 });

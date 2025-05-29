@@ -1,40 +1,5 @@
 import { UserType } from "./components/AlertMap/NearbyMember/NearbyMemberList";
 
-export const MOCK_USERS: UserType[] = [
-  {
-    id: 1,
-    lat: 30.293976,
-    lon: 78.0579,
-    name: "Zamanat",
-    status: "accepted",
-    distance: 0,
-  },
-  {
-    id: 2,
-    lat: 30.2858,
-    lon: 78.0684,
-    name: "Pankaj",
-    status: "pending",
-    distance: 0,
-  },
-  {
-    id: 3,
-    lat: 30.267,
-    lon: 78.0909,
-    name: "Saurabh",
-    status: "accepted",
-    distance: 0,
-  },
-  {
-    id: 4,
-    lat: 30.1158,
-    lon: 78.2853,
-    name: "Ujjwal",
-    status: "pending",
-    distance: 0,
-  },
-];
-
 export const calculateDistance = (
   lat1: number,
   lon1: number,
@@ -53,4 +18,27 @@ export const calculateDistance = (
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+};
+
+export const getAlertCardStyles = (emergencyType: string) => {
+  switch (emergencyType.toLowerCase()) {
+    case "medical":
+      return {
+        icon: "medical-bag",
+        color: "#ef4444",
+        backgroundColor: "#fee2e2",
+      };
+    case "safety":
+      return {
+        icon: "shield-alert",
+        color: "#f59e0b",
+        backgroundColor: "#fef3c7",
+      };
+    default:
+      return {
+        icon: "alert-circle",
+        color: "#4f46e5",
+        backgroundColor: "#ede9fe",
+      };
+  }
 };

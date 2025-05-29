@@ -22,7 +22,7 @@ const AlertResponseButton = observer(
 
     const alert = AlertStore.activeAlerts.find((a) => a._id === alertId);
     const currentResponse = alert?.responders?.find(
-      (r: any) => r.userDetails?.id === userId || r.userId === userId
+      (r: any) => r.userDetails?.id === userId || r.userId === userId //TODO: Refactor this after MVP
     );
 
     const handleResponse = async (status: SOSStatusType) => {

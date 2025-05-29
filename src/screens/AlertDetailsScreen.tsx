@@ -6,6 +6,7 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  Linking,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,6 +18,7 @@ import { AlertScreenStyles } from "./AlertScreen/AlertScreenStylesheet";
 import { AlertDetailsScreenStyles } from "./AlertDetailsScreenStylesheet";
 import { SOSStatusType } from "../navigation/types";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { getAlertCardStyles } from "../helpers";
 
 const LOGO = require("../../assets/AppIcon.png");
 
@@ -149,9 +151,11 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
       </LinearGradient>
 
       <View style={AlertDetailsScreenStyles.contentContainer}>
-        <View style={AlertDetailsScreenStyles.card}>
+        {/* <View style={AlertDetailsScreenStyles.card}>
           <Text style={AlertDetailsScreenStyles.cardTitle}>
-            {alert.emergencyType} Alert
+            {alert.emergencyType.charAt(0).toUpperCase() +
+              alert.emergencyType.slice(1)}{" "}
+            Alert
           </Text>
           <Text style={AlertDetailsScreenStyles.descriptionText}>
             "{alert.description}"
@@ -159,7 +163,110 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
           <Text style={AlertDetailsScreenStyles.detailText}>
             Reported at: {new Date(alert.createdAt).toLocaleString()}
           </Text>
+        </View> */}
+        <View style={[AlertDetailsScreenStyles.card]}>
+          <View style={AlertDetailsScreenStyles.cardHeader}>
+            <View style={AlertDetailsScreenStyles.typeContainer}>
+              <MaterialCommunityIcons
+                name={getAlertCardStyles(alert.emergencyType).icon}
+                size={24}
+                color={getAlertCardStyles(alert.emergencyType).color}
+                style={AlertDetailsScreenStyles.typeIcon}
+              />
+              <Text
+                style={[
+                  AlertDetailsScreenStyles.cardTitle,
+                  { color: getAlertCardStyles(alert.emergencyType).color },
+                ]}
+              >
+                {alert.emergencyType.charAt(0).toUpperCase() +
+                  alert.emergencyType.slice(1)}{" "}
+                Alert
+              </Text>
+            </View>
+            <View
+              style={[
+                AlertDetailsScreenStyles.statusBadge,
+                {
+                  backgroundColor: getAlertCardStyles(alert.emergencyType)
+                    .backgroundColor,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  AlertDetailsScreenStyles.statusText,
+                  { color: getAlertCardStyles(alert.emergencyType).color },
+                ]}
+              >
+                Active
+              </Text>
+            </View>
+          </View>
+
+          <Text style={AlertDetailsScreenStyles.descriptionText}>
+            "{alert.description}"
+          </Text>
+
+          <View style={AlertDetailsScreenStyles.timeContainer}>
+            <MaterialCommunityIcons
+              name="clock-outline"
+              size={16}
+              color="#6b7280"
+              style={{ marginRight: 4 }}
+            />
+            <Text style={AlertDetailsScreenStyles.detailText}>
+              {new Date(alert.createdAt).toLocaleDateString("en-US", {
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+          </View>
         </View>
+
+        <View style={AlertDetailsScreenStyles.card}>
+          <Text style={AlertDetailsScreenStyles.sectionTitle}>
+            Alert Created By
+          </Text>
+          <View style={AlertDetailsScreenStyles.victimDetailsContainer}>
+            <View style={AlertDetailsScreenStyles.detailRow}>
+              <MaterialCommunityIcons
+                name="account"
+                size={20}
+                color="#4f46e5"
+                style={AlertDetailsScreenStyles.iconStyle}
+              />
+              <Text style={AlertDetailsScreenStyles.victimName}>
+                {alert.userDetails?.name ?? "Anonymous"}
+              </Text>
+            </View>
+            <View style={AlertDetailsScreenStyles.detailRow}>
+              <MaterialCommunityIcons
+                name="phone"
+                size={20}
+                color="#4f46e5"
+                style={AlertDetailsScreenStyles.iconStyle}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  if (alert.userDetails?.phoneNumber) {
+                    Linking.openURL(`tel:${alert.userDetails.phoneNumber}`);
+                  }
+                }}
+              >
+                <Text style={AlertDetailsScreenStyles.victimPhone}>
+                  {alert.userDetails?.phoneNumber ?? "Not available"}
+                </Text>
+              </TouchableOpacity>
+              <Text style={AlertDetailsScreenStyles.victimPhoneTooltip}>
+                (* Click no. to call)
+              </Text>
+            </View>
+          </View>
+        </View>
+
         {user &&
           (alert.userRole !== "victim" ? (
             <View style={AlertDetailsScreenStyles.card}>

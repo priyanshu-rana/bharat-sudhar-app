@@ -36,4 +36,8 @@ export interface AlertType {
   }>;
   userRole: "victim" | "helper";
   createdAt: string;
+  userDetails?: {
+    name: string;
+    phoneNumber: string;
+  };
 }

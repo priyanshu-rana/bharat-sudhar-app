@@ -311,7 +311,7 @@ const CreateSOSAlert = ({
               <View style={styles.statusLine}>
                 <Text style={[styles.statusLabel, styles.fixedWidthLabel]}>
                   Current Address:
-                </Text>
+            </Text>
                 {(() => {
                   if (address === "" && location) {
                     return (
