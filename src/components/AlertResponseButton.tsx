@@ -9,60 +9,75 @@ import {
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { SOSStatusType } from "../navigation/types";
+import { AlertResponseButtonStyles as styles } from "./AlertResponseButtonStylesheet";
 
 interface AlertResponseProps {
   alertId: string;
   userId: string;
 }
 
-const AlertResponseButton = ({ alertId, userId }: AlertResponseProps) => {
-  const [loading, setLoading] = useState(false);
+const AlertResponseButton = observer(
+  ({ alertId, userId }: AlertResponseProps) => {
+    const [loading, setLoading] = useState(false);
 
-  const currentResponse = AlertStore.activeAlerts
-    .find((a) => a._id === alertId)
-    ?.responders?.find((r: any) => r.userDetails.id === userId);
+    const alert = AlertStore.activeAlerts.find((a) => a._id === alertId);
+    const currentResponse = alert?.responders?.find(
+      (r: any) => r.userDetails?.id === userId || r.userId === userId
+    );
 
-  const handleResponse = async (status: SOSStatusType) => {
-    try {
-      setLoading(true);
-      await AlertStore.respondToAlert(alertId, userId, status);
-    } catch (e) {
-      Alert.alert("Error", "An error occurred while responding to the alert");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleResponse = async (status: SOSStatusType) => {
+      try {
+        setLoading(true);
+        await AlertStore.respondToAlert(alertId, userId, status);
+      } catch (e) {
+        Alert.alert("Error", "An error occurred while responding to the alert");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (loading) return <ActivityIndicator size={"small"} />;
+    if (loading) return <ActivityIndicator size={"small"} />;
 
-  return (
-    <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
-      {(!currentResponse || currentResponse.status === "pending") && (
-        <>
-          <TouchableOpacity
-            style={{ padding: 10, backgroundColor: "#4CAF50", borderRadius: 5 }}
-            onPress={() => handleResponse(SOSStatusType.ACCEPTED)}
-          >
-            <Text style={{ color: "white" }}>Accept</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ padding: 10, backgroundColor: "#4CAF50", borderRadius: 5 }}
-            onPress={() => handleResponse(SOSStatusType.REJECTED)}
-          >
-            <Text style={{ color: "white" }}>Decline</Text>
-          </TouchableOpacity>
-        </>
-      )}
+    return (
+      <View style={styles.container}>
+        {(!currentResponse ||
+          currentResponse.status === SOSStatusType.PENDING) && (
+          <>
+            <TouchableOpacity
+              style={[styles.button, styles.acceptButton]}
+              onPress={() => handleResponse(SOSStatusType.ACCEPTED)}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>Accept</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.declineButton]}
+              onPress={() => handleResponse(SOSStatusType.REJECTED)}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>Decline</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
-      {currentResponse?.status === SOSStatusType.ACCEPTED && (
-        <Text style={{ color: "#4CAF50", padding: 10 }}>Accepted ✓</Text>
-      )}
+        {currentResponse?.status === SOSStatusType.ACCEPTED && (
+          <View style={styles.responseTextContainer}>
+            <Text style={[styles.responseText, styles.acceptedText]}>
+              Accepted ✓
+            </Text>
+          </View>
+        )}
 
-      {currentResponse?.status === SOSStatusType.REJECTED && (
-        <Text style={{ color: "#f44336", padding: 10 }}>Declined ✗</Text>
-      )}
-    </View>
-  );
-};
+        {currentResponse?.status === SOSStatusType.REJECTED && (
+          <View style={styles.responseTextContainer}>
+            <Text style={[styles.responseText, styles.declinedText]}>
+              Declined ✗
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  }
+);
 
-export default observer(AlertResponseButton);
+export default AlertResponseButton;

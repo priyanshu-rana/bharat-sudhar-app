@@ -5,12 +5,14 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import MapView, { Marker } from "react-native-maps"; // Optional: for a mini-map
-import { RespondAlertModalStyles } from "./RespondAlertModalStylesheet";
+import { RespondAlertModalStyles as styles } from "./RespondAlertModalStylesheet"; // Renamed for clarity
 import { AlertType, SOSStatusType } from "../../navigation/types";
 import AlertStore from "../../store/AlertStore";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"; // Import Icons
 
 interface RespondAlertModalProps {
   visible: boolean;
@@ -28,25 +30,30 @@ const RespondAlertModal = observer(
     onClose,
     onViewDetails,
   }: RespondAlertModalProps) => {
-    const [isLoading, setIsLoading] = useState(false);
+    const [isResponding, setIsResponding] = useState(false);
 
     const handleResponse = async (status: SOSStatusType) => {
       if (!alert || !currentUserId) return;
-      setIsLoading(true);
+      setIsResponding(true);
       try {
-        await AlertStore.respondToAlert(alert._id, currentUserId, status);
+        await AlertStore.respondToAlert(alert._id, currentUserId, status); // This action will handle AlertStore.isLoading
         onClose();
       } catch (error) {
         console.error("Error responding to alert:", error);
-        // Show an in-modal error message or use a global error handler
-        // For now, just log and close
+        Alert.alert(
+          "Response Error",
+          "Failed to submit your response. Please try again."
+        );
         onClose();
       } finally {
-        setIsLoading(false);
+        setIsResponding(false);
       }
     };
 
-    if (!alert) return null; // Or a loading/empty state if the modal can be visible without an alert
+    if (!alert) return null;
+
+    // Determine if the global loading indicator should be shown OR if the modal is locally busy
+    const showLoadingIndicator = AlertStore.isLoading || isResponding;
 
     return (
       <Modal
@@ -55,23 +62,36 @@ const RespondAlertModal = observer(
         visible={visible}
         onRequestClose={onClose}
       >
-        <View style={RespondAlertModalStyles.centeredView}>
-          <View style={RespondAlertModalStyles.modalView}>
-            <Text style={RespondAlertModalStyles.modalTitle}>
-              Incoming SOS Alert!
-            </Text>
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <View style={styles.modalTitleContainer}>
+              <MaterialCommunityIcons
+                name="alert-circle-outline"
+                size={26}
+                color={styles.modalTitle.color}
+                style={styles.titleIconStyle}
+              />
+              <Text style={styles.modalTitleText}>Incoming SOS Alert!</Text>
+            </View>
 
-            <View style={RespondAlertModalStyles.alertInfoContainer}>
-              <Text style={RespondAlertModalStyles.alertType}>
-                {alert.emergencyType}
+            <View style={styles.alertInfoContainer}>
+              <Text style={styles.alertType}>
+                {alert.emergencyType.toUpperCase()} Alert
               </Text>
-              <Text style={RespondAlertModalStyles.alertDescription}>
-                "{alert.description}"
-              </Text>
+              <Text style={styles.alertDescription}>"{alert.description}"</Text>
+              {alert.location.address ? (
+                <Text style={styles.alertAddress}>
+                  Address: {alert.location.address}
+                </Text>
+              ) : (
+                <Text style={styles.alertAddress}>
+                  Location by coordinates only.
+                </Text>
+              )}
               {/* Optional: Mini-map for location context */}
               {alert?.location?.coordinates && (
                 <MapView
-                  style={RespondAlertModalStyles.miniMap}
+                  style={styles.miniMap}
                   initialRegion={{
                     latitude: alert.location.coordinates[1],
                     longitude: alert.location.coordinates[0],
@@ -92,59 +112,73 @@ const RespondAlertModal = observer(
               )}
             </View>
 
-            {isLoading ? (
-              <ActivityIndicator size="large" color="#4f46e5" />
+            {showLoadingIndicator ? (
+              <ActivityIndicator
+                size="large"
+                color="#4f46e5"
+                style={{ marginVertical: 20 }}
+              />
             ) : (
-              <View style={RespondAlertModalStyles.buttonContainer}>
+              <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                  style={[
-                    RespondAlertModalStyles.button,
-                    RespondAlertModalStyles.acceptButton,
-                  ]}
+                  style={[styles.button, styles.acceptButton]}
                   onPress={() => handleResponse(SOSStatusType.ACCEPTED)}
+                  disabled={isResponding} // Disable based on local responding state
                 >
-                  <Text style={RespondAlertModalStyles.buttonText}>Accept</Text>
+                  <MaterialCommunityIcons
+                    name="check-circle-outline"
+                    size={20}
+                    color="white"
+                    style={styles.iconStyle}
+                  />
+                  <Text style={styles.buttonText}>Accept</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[
-                    RespondAlertModalStyles.button,
-                    RespondAlertModalStyles.declineButton,
-                  ]}
+                  style={[styles.button, styles.declineButton]}
                   onPress={() => handleResponse(SOSStatusType.REJECTED)}
+                  disabled={isResponding} // Disable based on local responding state
                 >
-                  <Text style={RespondAlertModalStyles.buttonText}>
-                    Decline
-                  </Text>
+                  <MaterialCommunityIcons
+                    name="close-circle-outline"
+                    size={20}
+                    color="white"
+                    style={styles.iconStyle}
+                  />
+                  <Text style={styles.buttonText}>Decline</Text>
                 </TouchableOpacity>
               </View>
             )}
             <TouchableOpacity
-              style={[
-                RespondAlertModalStyles.button,
-                RespondAlertModalStyles.viewDetailsButton,
-              ]}
+              style={[styles.button, styles.viewDetailsButton]}
               onPress={() => {
                 onViewDetails(alert._id);
-                onClose();
+                // onClose(); // Keep modal open if onViewDetails is main action here before explicit dismiss
               }}
-              disabled={isLoading}
+              disabled={showLoadingIndicator} // Also disable if globally loading or locally responding
             >
-              <Text style={RespondAlertModalStyles.viewDetailsButtonText}>
+              <MaterialCommunityIcons
+                name="information-outline"
+                size={20}
+                color="white"
+                style={styles.iconStyle}
+              />
+              <Text style={styles.viewDetailsButtonText}>
                 View Full Details
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                RespondAlertModalStyles.button,
-                RespondAlertModalStyles.closeButton,
-              ]}
-              onPress={onClose}
-              disabled={isLoading}
+              style={[styles.button, styles.closeButton]}
+              onPress={onClose} // This is the explicit dismiss
+              disabled={isResponding} // Only disable if locally responding, not global loading
             >
-              <Text style={RespondAlertModalStyles.closeButtonText}>
-                Dismiss
-              </Text>
+              <MaterialCommunityIcons
+                name="close"
+                size={20}
+                color="white"
+                style={styles.iconStyle}
+              />
+              <Text style={styles.closeButtonText}>Dismiss</Text>
             </TouchableOpacity>
           </View>
         </View>

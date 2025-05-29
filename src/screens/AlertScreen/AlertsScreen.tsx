@@ -10,7 +10,11 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { AlertType, RootStackParamList } from "../../navigation/types";
+import {
+  AlertType,
+  RootStackParamList,
+  SOSStatusType,
+} from "../../navigation/types";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import AlertMapModal from "../../components/AlertMap/AlertMapModal";
@@ -21,6 +25,7 @@ import AlertStore from "../../store/AlertStore";
 import { observer } from "mobx-react-lite";
 import CreateSOSAlert from "../../components/CreateSOSAlert";
 import RespondAlertModal from "../../components/RespondAlertModal/RespondAlertModal";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 const LOGO = require("../../../assets/AppIcon.png");
 
@@ -161,13 +166,61 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
     }
   };
 
+  const getConsolidatedAlertStatus = (
+    responders: AlertType["responders"],
+    alert?: AlertType
+  ) => {
+    if (alert?.userRole === "victim") {
+      return {
+        text: "Your Alert",
+        style: AlertScreenStyles.yourAlertStatus,
+        iconName: "account-alert-outline",
+      };
+    }
+    if (!responders || responders.length === 0) {
+      return {
+        text: "Pending",
+        style: AlertScreenStyles.pendingStatus,
+        iconName: "clock-outline",
+      };
+    }
+    if (responders.some((r) => r.status === SOSStatusType.ACCEPTED)) {
+      return {
+        text: "Accepted",
+        style: AlertScreenStyles.acceptedStatus,
+        iconName: "check-circle-outline",
+      };
+    }
+    if (responders.some((r) => r.status === SOSStatusType.REJECTED)) {
+      return {
+        text: "Rejected",
+        style: AlertScreenStyles.rejectedStatus,
+        iconName: "close-circle-outline",
+      };
+    }
+    if (responders.some((r) => r.status === SOSStatusType.COMPLETED)) {
+      return {
+        text: "Completed",
+        style: AlertScreenStyles.completedStatus,
+        iconName: "check-decagram-outline",
+      };
+    }
+    return {
+      text: "Pending",
+      style: AlertScreenStyles.pendingStatus,
+      iconName: "clock-outline",
+    }; // Default to Pending
+  };
+
   const renderAlertItem = ({ item }: { item: AlertType }) => {
     const typeSpecificStyle = getAlertItemStyle(item.emergencyType);
+    const alertStatus = getConsolidatedAlertStatus(item.responders, item);
+
     return (
       <TouchableOpacity
         style={[
           AlertScreenStyles.alertItem,
-          { 
+          {
             borderLeftColor: typeSpecificStyle.borderLeftColor,
             backgroundColor: typeSpecificStyle.backgroundColor,
           },
@@ -198,8 +251,41 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
           {item.description || "No description provided."}
         </Text>
         {/* Add location snippet or other details if available and desired */}
-        {/* <Text style={AlertScreenStyles.alertLocationSnippet}>{`Location: ${item.location.coordinates[1]}, ${item.location.coordinates[0]}`}</Text> */}
-        <View style={AlertScreenStyles.alertFooter}>
+        <Text style={AlertScreenStyles.alertLocationSnippet}>
+          {`Location: ${
+            item.location.address ??
+            `${item.location.coordinates[1]}, ${item.location.coordinates[0]}`
+          }`}
+        </Text>
+
+        <View style={AlertScreenStyles.statusActionRow}>
+          <View style={[AlertScreenStyles.statusBadge, alertStatus.style]}>
+            {Boolean(alertStatus.iconName) && (
+              <MaterialCommunityIcons
+                name={alertStatus.iconName}
+                size={14}
+                color={alertStatus.style.color || "white"}
+                style={AlertScreenStyles.iconStyle}
+              />
+            )}
+            <Text
+              style={{
+                color: alertStatus.style.color || "white",
+                fontSize: 12,
+                fontWeight: "600",
+              }}
+            >
+              {alertStatus.text}
+            </Text>
+          </View>
+
+          {/* <View>
+         
+
+            <Image source={LOGO} style={AlertScreenStyles.headerLogo} />
+            <Text style={AlertScreenStyles.headerTitle}>Alert Details</Text>
+          </View> */}
+
           <Text style={AlertScreenStyles.viewDetailsHint}>View Details →</Text>
         </View>
       </TouchableOpacity>
@@ -226,12 +312,24 @@ const AlertsScreen = ({ navigation }: AlertsScreenProps) => {
           style={AlertScreenStyles.viewMapButton}
           onPress={() => setShowMap(true)}
         >
+          <MaterialCommunityIcons
+            name="map-marker-outline"
+            size={20}
+            color="white"
+            style={AlertScreenStyles.iconStyle}
+          />
           <Text style={AlertScreenStyles.viewMapButtonText}>View Map</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={AlertScreenStyles.sosButton}
           onPress={() => setShowSOSCreateModal(true)}
         >
+          <MaterialCommunityIcons
+            name="alert-decagram-outline"
+            size={20}
+            color="white"
+            style={AlertScreenStyles.iconStyle}
+          />
           <Text style={AlertScreenStyles.viewMapButtonText}>SOS</Text>
         </TouchableOpacity>
       </View>

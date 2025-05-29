@@ -44,7 +44,9 @@ export const AlertScreenStyles = StyleSheet.create({
     shadowRadius: 2.22,
     flex: 1,
     marginHorizontal: 5,
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   viewMapButtonText: {
     color: "white",
@@ -63,7 +65,9 @@ export const AlertScreenStyles = StyleSheet.create({
     shadowRadius: 3.84,
     flex: 1,
     marginHorizontal: 5,
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   refreshButton: {
     backgroundColor: "#3b82f6",
@@ -116,10 +120,50 @@ export const AlertScreenStyles = StyleSheet.create({
     color: "#777",
     fontStyle: "italic",
   },
-  alertFooter: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
+  alertResponseStatus: {
+    fontSize: 12,
+    color: "#777",
+    fontStyle: "italic",
+    fontWeight: "600",
+  },
+  statusBadge: {
+    fontSize: 12,
+    fontWeight: "600",
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    overflow: "hidden",
+    textAlign: "center",
     marginTop: 8,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  acceptedStatus: {
+    backgroundColor: "#22c55e",
+    color: "#ffffff",
+  },
+  rejectedStatus: {
+    backgroundColor: "#ef4444",
+    color: "#ffffff",
+  },
+  completedStatus: {
+    backgroundColor: "#3b82f6",
+    color: "#ffffff",
+  },
+  pendingStatus: {
+    backgroundColor: "#f59e0b",
+    color: "#ffffff",
+  },
+  yourAlertStatus: {
+    backgroundColor: "#8b5cf6",
+    color: "#ffffff",
+  },
+  statusActionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
   },
   viewDetailsHint: {
     fontSize: 12,
@@ -146,5 +190,8 @@ export const AlertScreenStyles = StyleSheet.create({
     marginTop: 30,
     fontSize: 16,
     color: "#666",
+  },
+  iconStyle: {
+    marginRight: 8,
   },
 });

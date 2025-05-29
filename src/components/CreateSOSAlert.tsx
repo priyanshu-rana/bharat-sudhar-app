@@ -1,5 +1,3 @@
-//TODO: Refactor this component
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -43,6 +41,7 @@ const CreateSOSAlert = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [alertRadius, setAlertRadius] = useState(1000); // Default 1000 meters
+  const [address, setAddress] = useState<string>("");
 
   // Get current location when modal opens
   useEffect(() => {
@@ -50,6 +49,24 @@ const CreateSOSAlert = ({
       getCurrentLocation();
     }
   }, [visible]);
+
+  useEffect(() => {
+    const fetchAddress = async () => {
+      if (location) {
+        try {
+          const fetchedAddress = await addressResponse();
+          setAddress(fetchedAddress);
+        } catch (e) {
+          console.error("Error fetching address in useEffect:", e);
+          setAddress("Error fetching address");
+        }
+      } else {
+        setAddress(""); // Clear address if location is not available
+      }
+    };
+
+    fetchAddress();
+  }, [location]); // Add location to the dependency array
 
   const getCurrentLocation = async () => {
     try {
@@ -109,24 +126,26 @@ const CreateSOSAlert = ({
       const alertData = {
         userId,
         location: {
-          coordinates: [location.coords.longitude, location.coords.latitude],
+          coordinates: [
+            location.coords.longitude,
+            location.coords.latitude,
+          ] as [number, number],
+          address,
         },
         emergencyType: selectedType,
         description: description.trim(),
-        radius: alertRadius,
+        nearbyUserIds: AlertStore.nearbyUsers,
+        // radius: alertRadius,
       };
 
       console.log("Sending SOS alert with data:", alertData);
 
       await AlertStore.createAlert(
-        userId,
-        {
-          coordinates: [location.coords.longitude, location.coords.latitude],
-        },
-        selectedType,
-        description,
-        AlertStore.nearbyUsers
-        // alertRadius
+        alertData.userId,
+        alertData.location,
+        alertData.emergencyType,
+        alertData.description,
+        alertData.nearbyUserIds
       );
 
       setIsLoading(false);
@@ -165,6 +184,32 @@ const CreateSOSAlert = ({
       );
       console.log("API calling onSlidingComplete for radius:", radius);
     }
+  };
+
+  let addressResponse = async () => {
+    if (!location) return "No location available";
+    const response = await Location.reverseGeocodeAsync({
+      latitude: location?.coords.latitude,
+      longitude: location?.coords.longitude,
+    });
+    let addressText = "";
+    if (response && response.length > 0) {
+      const address = response[0];
+
+      // Create address string
+      addressText = [
+        address.street,
+        address.city,
+        address.district,
+        address.postalCode,
+        address.region,
+        address.country,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      return addressText;
+    }
+    return "No address found";
   };
 
   return (
@@ -248,11 +293,45 @@ const CreateSOSAlert = ({
             Choose how far to broadcast your alert (500m to 50km)
           </Text>
 
-          <View style={styles.locationStatus}>
-            <Text>
-              Location: {location ? "Ready" : "Waiting for location..."}
-            </Text>
-            {!location && <ActivityIndicator size="small" color="#4f46e5" />}
+          <View style={styles.locationInfoContainer}>
+            <View style={styles.statusLine}>
+              <Text style={[styles.statusLabel, styles.fixedWidthLabel]}>
+                Location:
+              </Text>
+              {isLoading && !location ? (
+                <ActivityIndicator size="small" color="#4f46e5" />
+              ) : (
+                <Text style={styles.statusValue}>
+                  {location ? "Ready" : "Waiting..."}
+                </Text>
+              )}
+            </View>
+
+            {location && (
+              <View style={styles.statusLine}>
+                <Text style={[styles.statusLabel, styles.fixedWidthLabel]}>
+                  Current Address:
+                </Text>
+                {(() => {
+                  if (address === "" && location) {
+                    return (
+                      <Text style={styles.statusValueMuted}>Fetching...</Text>
+                    );
+                  } else if (
+                    address === "Error fetching address" ||
+                    address === "No location available" ||
+                    address === "No address found"
+                  ) {
+                    return (
+                      <Text style={styles.statusValueMuted}>{address}</Text>
+                    );
+                  } else if (address) {
+                    return <Text style={styles.addressValue}>{address}</Text>;
+                  }
+                  return null;
+                })()}
+              </View>
+            )}
           </View>
 
           <View style={styles.buttonContainer}>
@@ -273,11 +352,7 @@ const CreateSOSAlert = ({
               onPress={handleSubmit}
               disabled={isLoading || !location || !userId}
             >
-              {isLoading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.sendButtonText}>Send Alert</Text>
-              )}
+              <Text style={styles.sendButtonText}>Send Alert</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -356,6 +431,7 @@ const styles = StyleSheet.create({
   slider: {
     width: "100%",
     height: 40,
+    textAlign: "center",
   },
   radiusDescription: {
     fontSize: 12,
@@ -363,11 +439,45 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
   },
-  locationStatus: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  locationInfoContainer: {
     marginBottom: 20,
+    padding: 12,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#dee2e6",
+  },
+  statusLine: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
+  statusLabel: {
+    fontWeight: "600",
+    fontSize: 15,
+    color: "#212529",
+    marginRight: 8,
+  },
+  fixedWidthLabel: {
+    width: 120,
+  },
+  statusValue: {
+    fontSize: 15,
+    color: "#495057",
+    flexShrink: 1,
+  },
+  addressValue: {
+    fontSize: 15,
+    color: "#6c757d",
+    flexShrink: 1,
+    fontStyle: "italic",
+    // fontWeight: "500",
+  },
+  statusValueMuted: {
+    fontSize: 15,
+    color: "#6c757d",
+    fontStyle: "italic",
+    flexShrink: 1,
   },
   buttonContainer: {
     flexDirection: "row",

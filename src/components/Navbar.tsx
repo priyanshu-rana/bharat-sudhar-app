@@ -3,19 +3,25 @@ import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { RootStackParamList } from "../navigation/types";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { LinearGradient } from "expo-linear-gradient";
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type NavbarNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+interface NavRoute {
+  name: keyof RootStackParamList;
+  iconName: string;
+  label: string;
+}
 
 const Navbar: React.FC = () => {
   const navigation = useNavigation<NavbarNavigationProp>();
 
-  const routes = [
-    { name: "Home", icon: "🏠", label: "Home" },
-    { name: "Dashboard", icon: "📊", label: "Dashboard" },
-    { name: "Alerts", icon: "🔔", label: "Alerts" },
-    { name: "Profile", icon: "👤", label: "Profile" },
-    { name: "Settings", icon: "⚙️", label: "Settings" },
+  const routes: NavRoute[] = [
+    { name: "Home", iconName: "home-outline", label: "Home" },
+    { name: "Dashboard", iconName: "view-dashboard-outline", label: "Dashboard" },
+    { name: "Alerts", iconName: "bell-outline", label: "Alerts" },
+    { name: "Profile", iconName: "account-circle-outline", label: "Profile" },
+    { name: "Settings", iconName: "cog-outline", label: "Settings" },
   ];
 
   return (
@@ -24,12 +30,13 @@ const Navbar: React.FC = () => {
         <TouchableOpacity
           key={route.name}
           style={styles.navItem}
-          onPress={() =>
-            navigation.navigate(route.name as keyof RootStackParamList)
-          }
+          onPress={() => {
+            type ParameterLessRoutes = Exclude<keyof RootStackParamList, 'AlertDetails'>;
+            navigation.navigate(route.name as ParameterLessRoutes);
+          }}
         >
           <View style={styles.navIconContainer}>
-            <Text style={styles.navIcon}>{route.icon}</Text>
+            <MaterialCommunityIcons name={route.iconName} size={24} color="#475569" />
           </View>
           <Text style={styles.navText}>{route.label}</Text>
         </TouchableOpacity>

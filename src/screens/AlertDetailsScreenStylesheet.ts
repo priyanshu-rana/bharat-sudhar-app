@@ -75,16 +75,36 @@ export const AlertDetailsScreenStyles = StyleSheet.create({
     textAlign: "center",
     paddingVertical: 10,
   },
+  // Status badge styles - designed to match AlertsScreen
+  statusBadge: {
+    fontSize: 12,
+    fontWeight: "600",
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    overflow: "hidden", // Ensures text stays within rounded corners
+    textAlign: "center",
+    alignSelf: "flex-start", // Ensure badge only takes necessary width
+    flexDirection: 'row', // Add for icon and text
+    alignItems: 'center',  // Add for icon and text
+  },
+  acceptedStatus: {
+    backgroundColor: "#22c55e",
+    color: "#ffffff",
+  },
+  rejectedStatus: {
+    backgroundColor: "#ef4444",
+    color: "#ffffff",
+  },
+  completedStatus: {
+    backgroundColor: "#3b82f6",
+    color: "#ffffff",
+  },
+  pendingStatus: {
+    backgroundColor: "#f59e0b", // Amber
+    color: "#ffffff",
+  },
+  iconStyle: { // New style for icons
+    marginRight: 5, // Slightly less margin for potentially smaller badges
+  },
 });
-
-// Function to get status color, can also be part of the stylesheet or a helper utils file
-export const getStatusColor = (status: SOSStatusType) => {
-  switch (status?.toLowerCase()) {
-    case SOSStatusType.ACCEPTED:
-      return "#4CAF50"; // Green
-    case SOSStatusType.REJECTED:
-      return "#f44336"; // Red
-    default:
-      return "#FFC107"; // Amber
-  }
-};

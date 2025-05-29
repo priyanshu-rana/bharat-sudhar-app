@@ -19,6 +19,7 @@ class AlertStore {
     makeAutoObservable(this);
   }
 
+  @action
   private handleRespondAlert = (update: any) => {
     this.updateAlertResponders(update);
   };
@@ -69,7 +70,7 @@ class AlertStore {
   @action
   async createAlert(
     userId: string,
-    location: { coordinates: [number, number] },
+    location: { coordinates: [number, number]; address?: string },
     emergencyType: string,
     description: string,
     nearbyUserIds?: string[]
@@ -83,10 +84,13 @@ class AlertStore {
         emergencyType,
         description,
         nearbyUserIds,
-        // radius,
       });
       this.currentAlert = newAlert;
+      await this.userInvolvedAlerts(userId);
       return newAlert;
+    } catch (error) {
+      console.error("Error in AlertStore.createAlert:", error);
+      throw error;
     } finally {
       this.isLoading = false;
     }
@@ -113,31 +117,41 @@ class AlertStore {
     userId: string,
     status?: SOSStatusType
   ) {
+    this.isLoading = true;
     try {
       const response = await respondToAlert({ alertId, userId, status });
 
       const alertIndex = this.activeAlerts.findIndex((a) => a._id === alertId);
-      if (alertIndex > -1 && response.data) {
-        this.activeAlerts[alertIndex] = {
-          ...this.activeAlerts[alertIndex],
-          ...response.data,
+      if (alertIndex > -1 && response) {
+        // Create a new array reference for MobX
+        const newAlerts = [...this.activeAlerts];
+        newAlerts[alertIndex] = {
+          ...newAlerts[alertIndex],
+          ...response,
         };
+        this.activeAlerts = newAlerts;
       }
       return this.activeAlerts[alertIndex];
     } catch (error) {
       console.error("Respond to alert error:", error);
       throw error;
+    } finally {
+      this.isLoading = false;
     }
   }
 
   @action
   updateAlertResponders(update: any) {
+    console.log("updateAlertResponders - update:", update);
     const index = this.activeAlerts.findIndex((a) => a._id === update.alertId);
     if (index > -1) {
-      this.activeAlerts[index] = {
-        ...this.activeAlerts[index],
+      // Create a new array reference for MobX
+      const newAlerts = [...this.activeAlerts];
+      newAlerts[index] = {
+        ...newAlerts[index],
         responders: update.data.responders,
       };
+      this.activeAlerts = newAlerts;
     }
   }
 

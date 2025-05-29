@@ -14,10 +14,9 @@ import AlertResponseButton from "../components/AlertResponseButton";
 import { getUser, UserData } from "../service/authApiService";
 import { observer } from "mobx-react-lite";
 import { AlertScreenStyles } from "./AlertScreen/AlertScreenStylesheet";
-import {
-  AlertDetailsScreenStyles,
-  getStatusColor,
-} from "./AlertDetailsScreenStylesheet";
+import { AlertDetailsScreenStyles } from "./AlertDetailsScreenStylesheet";
+import { SOSStatusType } from "../navigation/types";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 const LOGO = require("../../assets/AppIcon.png");
 
@@ -53,7 +52,11 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
               onPress={() => navigation.goBack()}
               style={{ marginRight: 10, padding: 5 }}
             >
-              <Text style={{ color: "white", fontSize: 24 }}>←</Text>
+              <MaterialCommunityIcons
+                name="arrow-left"
+                size={24}
+                color="white"
+              />
             </TouchableOpacity>
             <Image source={LOGO} style={AlertScreenStyles.headerLogo} />
             <Text style={AlertScreenStyles.headerTitle}>Alert Details</Text>
@@ -68,21 +71,61 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
     );
   }
 
-  const renderResponderItem = ({ item }: { item: any }) => (
-    <View style={AlertDetailsScreenStyles.responderItem}>
-      <Text style={AlertDetailsScreenStyles.responderName}>
-        {item.userDetails?.name}
-      </Text>
-      <Text
-        style={[
-          AlertDetailsScreenStyles.responderStatus,
-          { color: getStatusColor(item.status) },
-        ]}
-      >
-        {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-      </Text>
-    </View>
-  );
+  const getResponderStatusStyle = (status: SOSStatusType) => {
+    switch (status) {
+      case SOSStatusType.ACCEPTED:
+        return {
+          style: AlertDetailsScreenStyles.acceptedStatus,
+          iconName: "check-circle-outline",
+        };
+      case SOSStatusType.REJECTED:
+        return {
+          style: AlertDetailsScreenStyles.rejectedStatus,
+          iconName: "close-circle-outline",
+        };
+      case SOSStatusType.COMPLETED:
+        return {
+          style: AlertDetailsScreenStyles.completedStatus,
+          iconName: "check-decagram-outline",
+        };
+      case SOSStatusType.PENDING:
+      default:
+        return {
+          style: AlertDetailsScreenStyles.pendingStatus,
+          iconName: "clock-outline",
+        };
+    }
+  };
+
+  const renderResponderItem = ({ item }: { item: any }) => {
+    const statusInfo = getResponderStatusStyle(item.status as SOSStatusType);
+    return (
+      <View style={AlertDetailsScreenStyles.responderItem}>
+        <Text style={AlertDetailsScreenStyles.responderName}>
+          {item.userDetails?.name}
+        </Text>
+        <View style={[AlertDetailsScreenStyles.statusBadge, statusInfo.style]}>
+          {Boolean(statusInfo.iconName) && (
+            <MaterialCommunityIcons
+              name={statusInfo.iconName}
+              size={14}
+              color={statusInfo.style.color || "white"}
+              style={AlertDetailsScreenStyles.iconStyle}
+            />
+          )}
+          <Text
+            style={{
+              color: statusInfo.style.color || "white",
+              fontSize: 12,
+              fontWeight: "600",
+            }}
+          >
+            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+          </Text>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={AlertDetailsScreenStyles.container}>
@@ -98,7 +141,7 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
             onPress={() => navigation.goBack()}
             style={{ marginRight: 10, padding: 5 }}
           >
-            <Text style={{ color: "white", fontSize: 24 }}>←</Text>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="white" />
           </TouchableOpacity>
           <Image source={LOGO} style={AlertScreenStyles.headerLogo} />
           <Text style={AlertScreenStyles.headerTitle}>Alert Details</Text>
@@ -117,14 +160,25 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
             Reported at: {new Date(alert.createdAt).toLocaleString()}
           </Text>
         </View>
-        {user && (
-          <View style={AlertDetailsScreenStyles.card}>
-            <Text style={AlertDetailsScreenStyles.sectionTitle}>
-              Your Response
-            </Text>
-            <AlertResponseButton alertId={alertId} userId={user._id} />
-          </View>
-        )}
+        {user &&
+          (alert.userRole !== "victim" ? (
+            <View style={AlertDetailsScreenStyles.card}>
+              <Text style={AlertDetailsScreenStyles.sectionTitle}>
+                Your Response
+              </Text>
+              <AlertResponseButton alertId={alertId} userId={user._id} />
+            </View>
+          ) : (
+            <View style={AlertDetailsScreenStyles.card}>
+              <Text style={AlertDetailsScreenStyles.sectionTitle}>
+                Alert Status
+              </Text>
+              <Text style={AlertDetailsScreenStyles.descriptionText}>
+                Your alert has been circulated to nearby users. Please be
+                patient as responders are notified.
+              </Text>
+            </View>
+          ))}
         <View style={AlertDetailsScreenStyles.card}>
           <Text style={AlertDetailsScreenStyles.sectionTitle}>
             Responders ({alert.responders?.length || 0})

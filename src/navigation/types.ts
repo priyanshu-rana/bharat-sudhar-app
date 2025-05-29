@@ -20,6 +20,12 @@ export enum SOSStatusType {
 
 export interface AlertType {
   _id: string;
+  emergencyType: string;
+  description: string;
+  location: {
+    coordinates: [number, number];
+    address?: string;
+  };
   responders: Array<{
     userDetails: {
       id: string;
@@ -28,10 +34,6 @@ export interface AlertType {
     };
     status: string;
   }>;
-  emergencyType: string;
-  description: string;
-  location: {
-    coordinates: [number, number];
-  };
+  userRole: "victim" | "helper";
   createdAt: string;
 }
