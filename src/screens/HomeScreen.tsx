@@ -25,8 +25,8 @@ const { width } = Dimensions.get("window");
 
 // Define images with fallbacks
 const IMAGES = {
-  logo: require("../../assets/logo.png"),
-  cityBg: require("../../assets/city-bg.jpg"),
+  logo: require("../../assets/AppIcon.png"),
+  cityBg: require("../../assets/AppIcon.png"),
   pothole: require("../../assets/images/RoadPotholeIssue.jpg"),
   streetlight: require("../../assets/images/StreetLightIssue.jpg"),
   water: require("../../assets/images/WaterShortageIssue.jpg"),
@@ -128,7 +128,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
             source={IMAGES.cityBg}
             style={styles.heroBackground}
             onError={() => handleImageError("city-bg")}
-            defaultSource={require("../../assets/placeholders/city-bg.jpg")}
+            defaultSource={IMAGES.logo}
           >
             <LinearGradient
               colors={["rgba(79, 70, 229, 0.9)", "rgba(55, 48, 163, 0.9)"]}
@@ -139,7 +139,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
                 style={styles.logo}
                 resizeMode="contain"
                 onError={() => handleImageError("logo")}
-                defaultSource={require("../../assets/placeholders/logo.png")}
+                defaultSource={IMAGES.logo}
               />
               <Text style={styles.heroTitle}>Bharat Sudhar</Text>
               <Text style={styles.heroSubtitle}>
@@ -266,7 +266,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
                   style={styles.successImage}
                   resizeMode="cover"
                   onError={() => handleImageError("success")}
-                  defaultSource={require("../../assets/placeholders/success.jpg")}
+                  defaultSource={IMAGES.logo}
                 />
               )}
               {failedImages["success"] && (

@@ -12,8 +12,7 @@
       "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
-      "assets/**/*",
-      "**/*"
+      "assets/AppIcon.png"
     ],
     "ios": {
       "supportsTablet": true,

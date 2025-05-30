@@ -18,10 +18,11 @@
     "production": {
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease",
+        "gradleCommand": ":app:bundleRelease",
         "autoIncrement": true,
         "distribution": "store",
-        "ndk": "26.1.10909125"
+        "ndk": "26.1.10909125",
+        "resourceClass": "medium"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://example.com"
