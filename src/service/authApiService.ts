@@ -2,9 +2,10 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 // http://{{DEVICE_IP}}:8080/auth
-const DEVICE_IP = "192.100.0.00"; // Replace with your device's IP address
-const API_BASE_URL = `http://${DEVICE_IP}:8080/auth`;
 // const API_BASE_URL = "https://bharat-sudhar-backend.onrender.com/auth";
+import { LOCAL_API_BASE_URL } from "./apiService";
+// const API_BASE_URL = `${LOCAL_API_BASE_URL}/auth`;
+const API_BASE_URL = "https://bharat-sudhar-backend.onrender.com/auth";
 
 console.log("Using API URL:", API_BASE_URL);
 

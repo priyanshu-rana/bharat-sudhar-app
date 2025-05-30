@@ -1,10 +1,9 @@
 import axios from "axios";
+import { LOCAL_API_BASE_URL } from "./apiService";
 import { SOSStatusType } from "../navigation/types";
 
-// Base URL configuration
-const DEVICE_IP = "192.100.0.00"; // Your local IP address
-const API_BASE_URL = `http://${DEVICE_IP}:8080`;
-// const API_BASE_URL = "https://bharat-sudhar-backend.onrender.com";
+// const API_BASE_URL = `${LOCAL_API_BASE_URL}`;
+const API_BASE_URL = "https://bharat-sudhar-backend.onrender.com";
 
 console.log("SOS API using base URL:", API_BASE_URL);
 
@@ -15,6 +14,7 @@ const sosApiService = axios.create({
   },
   timeout: 30000, // 30 seconds timeout
 });
+// Base URL - same as auth service but different endpoint path
 
 // User type for nearby users
 export interface UserType {
