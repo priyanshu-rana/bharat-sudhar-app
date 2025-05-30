@@ -18,6 +18,7 @@ import { RootStackParamList } from "../navigation/types";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const LOGO = require("../../assets/AppIcon.png");
 
@@ -188,7 +189,7 @@ const ReportIssueScreen = ({ navigation, route }: ReportIssueScreenProps) => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backButtonText}>←</Text>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
           </TouchableOpacity>
           <Image source={LOGO} style={styles.headerLogo} />
           <Text style={styles.headerTitle}>Report Issue</Text>
@@ -529,10 +530,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 20,
     marginRight: 10,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: "#ffffff",
   },
   imageContainer: {
     position: "relative",

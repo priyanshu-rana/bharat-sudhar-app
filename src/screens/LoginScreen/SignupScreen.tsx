@@ -17,7 +17,7 @@ import { Picker } from "@react-native-picker/picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import * as Location from "expo-location";
-import { AuthStyles } from "./AuthStyle";
+import { AuthStyles } from "./AuthStylesheet";
 import { signup } from "../../service/authApiService";
 
 const LOGO = require("../../../assets/AppIcon.png");
@@ -76,7 +76,7 @@ const SignUpScreen = ({ navigation }: any) => {
     },
   });
 
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [locationStatus, setLocationStatus] =
     useState<Location.PermissionStatus>();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,19 +96,19 @@ const SignUpScreen = ({ navigation }: any) => {
     try {
       let location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
-      
+
       // Get address from coordinates
       let addressResponse = await Location.reverseGeocodeAsync({
         latitude,
-        longitude
+        longitude,
       });
-      
+
       let addressText = "";
       let detectedState = "";
-      
+
       if (addressResponse && addressResponse.length > 0) {
         const address = addressResponse[0];
-        
+
         // Create address string
         addressText = [
           address.street,
@@ -116,17 +116,19 @@ const SignUpScreen = ({ navigation }: any) => {
           address.district,
           address.postalCode,
           address.region,
-          address.country
-        ].filter(Boolean).join(", ");
-        
+          address.country,
+        ]
+          .filter(Boolean)
+          .join(", ");
+
         // Try to match the region/state to our STATES list
         if (address.region) {
           // Normalize the state name to match our format (if possible)
           const normalizedRegion = address.region.trim();
-          const matchedState = STATES.find(state => 
-            state.toLowerCase() === normalizedRegion.toLowerCase()
+          const matchedState = STATES.find(
+            (state) => state.toLowerCase() === normalizedRegion.toLowerCase()
           );
-          
+
           if (matchedState) {
             detectedState = matchedState;
           }
@@ -134,20 +136,20 @@ const SignUpScreen = ({ navigation }: any) => {
       } else {
         addressText = `Location coordinates: ${latitude}, ${longitude}`;
       }
-      
+
       setLocationAddress(addressText);
-      
+
       // Update the form with location and address info
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         location: {
           type: "Point",
           coordinates: [longitude, latitude], // Note: GeoJSON uses [longitude, latitude]
           address: addressText,
         },
-        ...(detectedState ? { state: detectedState } : {})
+        ...(detectedState ? { state: detectedState } : {}),
       }));
-      
+
       // Show alert if state was detected
       if (detectedState) {
         Alert.alert(
@@ -181,13 +183,13 @@ const SignUpScreen = ({ navigation }: any) => {
   };
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
-    
+    const newErrors: { [key: string]: string } = {};
+
     // Validate name
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
     }
-    
+
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim()) {
@@ -195,19 +197,19 @@ const SignUpScreen = ({ navigation }: any) => {
     } else if (!emailRegex.test(formData.email)) {
       newErrors.email = "Please enter a valid email";
     }
-    
+
     // Validate password
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
-    
+
     // Validate district
     if (!formData.district.trim()) {
       newErrors.district = "District is required";
     }
-    
+
     // Validate phone number
     const phoneRegex = /^\d{10}$/;
     if (!formData.phoneNumber.trim()) {
@@ -215,28 +217,31 @@ const SignUpScreen = ({ navigation }: any) => {
     } else if (!phoneRegex.test(formData.phoneNumber)) {
       newErrors.phoneNumber = "Please enter a valid 10-digit phone number";
     }
-    
+
     // Validate location
-    if (formData.location.coordinates[0] === 0 && formData.location.coordinates[1] === 0) {
+    if (
+      formData.location.coordinates[0] === 0 &&
+      formData.location.coordinates[1] === 0
+    ) {
       newErrors.location = "Location is required";
     }
-    
+
     if (!formData.location.address) {
       newErrors.location = "Location address is required";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSignup = async () => {
     if (isSubmitting) return;
-    
+
     if (!validateForm()) {
       Alert.alert("Error", "Please fill all required fields correctly");
       return;
     }
-    
+
     setIsSubmitting(true);
 
     try {
@@ -262,7 +267,7 @@ const SignUpScreen = ({ navigation }: any) => {
     { key: "email", label: "Email Address" },
     { key: "password", label: "Password" },
     { key: "district", label: "District" },
-    { key: "phoneNumber", label: "Phone Number" }
+    { key: "phoneNumber", label: "Phone Number" },
   ];
 
   const handleTextChange = (key: string, text: string) => {
@@ -278,20 +283,29 @@ const SignUpScreen = ({ navigation }: any) => {
       <StatusBar style="light" backgroundColor="transparent" translucent />
       <LinearGradient
         colors={["#4f46e5", "#3730a3"]}
-        style={[AuthStyles.background, { paddingTop: Platform.OS === "android" ? RNStatusBar.currentHeight : 0 }]}
+        style={[
+          AuthStyles.background,
+          {
+            paddingTop:
+              Platform.OS === "android" ? RNStatusBar.currentHeight : 0,
+          },
+        ]}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
         >
-          <ScrollView 
-            style={AuthStyles.scrollView} 
+          <ScrollView
+            style={AuthStyles.scrollView}
             contentContainerStyle={{ paddingVertical: 10 }}
             showsVerticalScrollIndicator={false}
           >
             <View style={[AuthStyles.container, { paddingTop: 5 }]}>
-              <View style={{ alignItems: 'center', marginBottom: 15 }}>
-                <Image source={LOGO} style={{ width: 60, height: 60, marginBottom: 10 }} />
+              <View style={{ alignItems: "center", marginBottom: 15 }}>
+                <Image
+                  source={LOGO}
+                  style={{ width: 60, height: 60, marginBottom: 10 }}
+                />
                 <Text style={AuthStyles.header}>Create Account</Text>
                 <Text style={AuthStyles.subtitle}>
                   Join our community improvement platform
@@ -303,13 +317,17 @@ const SignUpScreen = ({ navigation }: any) => {
                   <View key={field.key} style={{ marginBottom: 15 }}>
                     <TextInput
                       style={[
-                        AuthStyles.input, 
-                        errors[field.key] ? { borderWidth: 1, borderColor: "#FF6B6B" } : {},
-                        { marginBottom: errors[field.key] ? 5 : 0 }
+                        AuthStyles.input,
+                        errors[field.key]
+                          ? { borderWidth: 1, borderColor: "#FF6B6B" }
+                          : {},
+                        { marginBottom: errors[field.key] ? 5 : 0 },
                       ]}
                       placeholder={field.label}
                       placeholderTextColor="#666"
-                      value={formData[field.key as keyof typeof formData] as string}
+                      value={
+                        formData[field.key as keyof typeof formData] as string
+                      }
                       onChangeText={(text) => handleTextChange(field.key, text)}
                       secureTextEntry={field.key === "password"}
                       keyboardType={
@@ -319,17 +337,34 @@ const SignUpScreen = ({ navigation }: any) => {
                           ? "phone-pad"
                           : "default"
                       }
-                      autoCapitalize={field.key === "email" || field.key === "password" ? "none" : "words"}
+                      autoCapitalize={
+                        field.key === "email" || field.key === "password"
+                          ? "none"
+                          : "words"
+                      }
                     />
                     {errors[field.key] ? (
-                      <Text style={{ color: "#FF6B6B", fontSize: 12, marginLeft: 5 }}>
+                      <Text
+                        style={{
+                          color: "#FF6B6B",
+                          fontSize: 12,
+                          marginLeft: 5,
+                        }}
+                      >
                         {errors[field.key]}
                       </Text>
                     ) : null}
                   </View>
                 ))}
 
-                <View style={[AuthStyles.picker, errors.state ? { borderWidth: 1, borderColor: "#FF6B6B" } : {}]}>
+                <View
+                  style={[
+                    AuthStyles.picker,
+                    errors.state
+                      ? { borderWidth: 1, borderColor: "#FF6B6B" }
+                      : {},
+                  ]}
+                >
                   <Picker
                     selectedValue={formData.state}
                     onValueChange={(itemValue) =>
@@ -343,17 +378,32 @@ const SignUpScreen = ({ navigation }: any) => {
                   </Picker>
                 </View>
 
-                <View style={[
-                  AuthStyles.locationContainer, 
-                  errors.location ? { borderWidth: 1, borderColor: "#FF6B6B", marginBottom: 5 } : {}
-                ]}>
+                <View
+                  style={[
+                    AuthStyles.locationContainer,
+                    errors.location
+                      ? {
+                          borderWidth: 1,
+                          borderColor: "#FF6B6B",
+                          marginBottom: 5,
+                        }
+                      : {},
+                  ]}
+                >
                   <Text style={AuthStyles.locationText}>
                     {formData.location.coordinates[1] !== 0
-                      ? `Lat: ${formData.location.coordinates[1].toFixed(4)}, Lng: ${formData.location.coordinates[0].toFixed(4)}`
+                      ? `Lat: ${formData.location.coordinates[1].toFixed(
+                          4
+                        )}, Lng: ${formData.location.coordinates[0].toFixed(4)}`
                       : "Location not available"}
                   </Text>
                   {formData.location.address ? (
-                    <Text style={[AuthStyles.locationText, { marginTop: 5, fontSize: 12 }]}>
+                    <Text
+                      style={[
+                        AuthStyles.locationText,
+                        { marginTop: 5, fontSize: 12 },
+                      ]}
+                    >
                       Address: {formData.location.address}
                     </Text>
                   ) : null}
@@ -368,9 +418,16 @@ const SignUpScreen = ({ navigation }: any) => {
                     </Text>
                   </TouchableOpacity>
                 </View>
-                
+
                 {errors.location ? (
-                  <Text style={{ color: "#FF6B6B", fontSize: 12, marginLeft: 5, marginBottom: 15 }}>
+                  <Text
+                    style={{
+                      color: "#FF6B6B",
+                      fontSize: 12,
+                      marginLeft: 5,
+                      marginBottom: 15,
+                    }}
+                  >
                     {errors.location}
                   </Text>
                 ) : null}
