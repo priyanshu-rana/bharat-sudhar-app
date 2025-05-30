@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -10,12 +10,19 @@ import {
   Dimensions,
   ScrollView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { reportIssueService, IssueResponse } from "../service/issueApiService";
+import { useFocusEffect } from '@react-navigation/native';
+import { observer } from "mobx-react-lite";
+import dashboardStore from "../store/DashboardStore";
+import IssueLocationModal from "../components/IssueLocationModal";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 type DashboardScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Dashboard">;
@@ -89,51 +96,34 @@ const INITIAL_ISSUES = [
   },
 ];
 
-const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
+const DashboardScreen = observer(({ navigation }: DashboardScreenProps) => {
   const [activeFilter, setActiveFilter] = useState("all");
-  const [issues, setIssues] = useState<any[]>([]);
+  const [selectedIssue, setSelectedIssue] = useState<IssueResponse | null>(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
-  // Load issues from AsyncStorage on component mount
-  useEffect(() => {
-    const loadIssues = async () => {
-      try {
-        const storedIssues = await AsyncStorage.getItem("reportedIssues");
-        if (storedIssues) {
-          setIssues(JSON.parse(storedIssues));
-        } else {
-          // If no stored issues, use initial mock data and save it
-          setIssues(INITIAL_ISSUES);
-          await AsyncStorage.setItem(
-            "reportedIssues",
-            JSON.stringify(INITIAL_ISSUES)
-          );
-        }
-      } catch (error) {
-        console.error("Failed to load issues:", error);
-        setIssues(INITIAL_ISSUES);
-      }
-    };
-
-    loadIssues();
-  }, []);
-
-  // Filter issues based on active filter
-  const filteredIssues = issues.filter((issue) => {
-    if (activeFilter === "all") return true;
-    return issue.status === activeFilter;
-  });
+  // Load issues when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      dashboardStore.loadIssues();
+    }, [activeFilter])
+  );
 
   const navigateToReportIssue = () => {
     navigation.navigate("ReportIssue");
   };
 
-  const renderIssueItem = ({ item }: { item: any }) => (
+  const handleShowLocation = (issue: IssueResponse) => {
+    setSelectedIssue(issue);
+    setShowLocationModal(true);
+  };
+
+  const renderIssueItem = ({ item }: { item: IssueResponse }) => (
     <View style={styles.issueCard}>
       <Image
         source={
-          typeof item.image === "string"
-            ? IMAGES[item.category as keyof typeof IMAGES] || IMAGES.other
-            : item.image
+          item.image
+            ? { uri: item.image }
+            : IMAGES[item.category as keyof typeof IMAGES] || IMAGES.other
         }
         style={styles.issueImage}
         resizeMode="cover"
@@ -169,29 +159,36 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
             </Text>
           </View>
         </View>
-        <Text style={styles.issueLocation}>{item.location}</Text>
+        <Text style={styles.issueLocation}>{item.location.address}</Text>
         <Text style={styles.issueDescription}>{item.description}</Text>
-        <Text style={styles.issueDate}>Reported on: {item.date}</Text>
+        <Text style={styles.issueDate}>
+          Reported by: {item.userId.name} •{" "}
+          {new Date(item.createdAt).toLocaleDateString()}
+        </Text>
         <View style={styles.issueFooter}>
-          <Text style={styles.voteCount}>{item.upvotes} Votes</Text>
           <View style={styles.buttonGroup}>
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Details</Text>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => handleShowLocation(item)}
+            >
+              <MaterialCommunityIcons
+                name="map-marker-outline"
+                size={16}
+                color="#4f46e5"
+                style={styles.actionButtonIcon}
+              />
+              <Text style={styles.actionButtonText}>View Location</Text>
             </TouchableOpacity>
-            {item.status !== "resolved" && (
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionButtonText}>Vote</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
       </View>
     </View>
   );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
+  if (dashboardStore.isLoading && dashboardStore.issues.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="light" backgroundColor="transparent" translucent />
         <LinearGradient
           colors={["#4f46e5", "#3730a3"]}
           style={styles.header}
@@ -210,25 +207,53 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
           </View>
         </LinearGradient>
 
-        <StatusBar style="light" backgroundColor="transparent" translucent />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4f46e5" />
+          <Text style={styles.loadingText}>Loading issues...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="light" backgroundColor="transparent" translucent />
+      <LinearGradient
+        colors={["#4f46e5", "#3730a3"]}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.headerTop}>
+          <Image source={LOGO} style={styles.headerLogo} />
+          <Text style={styles.headerTitle}>Dashboard</Text>
+          <TouchableOpacity
+            style={styles.reportButton}
+            onPress={navigateToReportIssue}
+          >
+            <Text style={styles.reportButtonText}>Report Issue</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+
+      <View style={styles.mainContent}>
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statIcon}>📊</Text>
-            <Text style={styles.statNumber}>{issues.length}</Text>
+            <Text style={styles.statNumber}>{dashboardStore.issues.length}</Text>
             <Text style={styles.statLabel}>Total Issues</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statIcon}>⏳</Text>
             <Text style={styles.statNumber}>
-              {issues.filter((i) => i.status === "pending").length}
+              {dashboardStore.issues.filter((i) => i.status === "pending").length}
             </Text>
             <Text style={styles.statLabel}>Pending</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statIcon}>✅</Text>
             <Text style={styles.statNumber}>
-              {issues.filter((i) => i.status === "resolved").length}
+              {dashboardStore.issues.filter((i) => i.status === "resolved").length}
             </Text>
             <Text style={styles.statLabel}>Resolved</Text>
           </View>
@@ -301,17 +326,53 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
           </TouchableOpacity>
         </View>
 
-        <FlatList
-          data={filteredIssues}
-          renderItem={renderIssueItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
+        {dashboardStore.error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{dashboardStore.error}</Text>
+          </View>
+        ) : dashboardStore.issues.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No issues found</Text>
+            <TouchableOpacity
+              style={styles.reportButton}
+              onPress={navigateToReportIssue}
+            >
+              <Text style={styles.reportButtonText}>Report an Issue</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={dashboardStore.issues}
+            renderItem={renderIssueItem}
+            keyExtractor={(item) => item._id}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            onEndReached={() => {
+              if (dashboardStore.currentPage < dashboardStore.totalPages && !dashboardStore.isLoading) {
+                dashboardStore.setCurrentPage(dashboardStore.currentPage + 1);
+              }
+            }}
+            onEndReachedThreshold={0.5}
+            refreshing={dashboardStore.isLoading}
+            onRefresh={() => dashboardStore.loadIssues()}
+          />
+        )}
+      </View>
+
+      {selectedIssue && (
+        <IssueLocationModal
+          visible={showLocationModal}
+          onClose={() => {
+            setShowLocationModal(false);
+            setSelectedIssue(null);
+          }}
+          location={selectedIssue.location}
+          title={selectedIssue.title}
         />
-      </ScrollView>
+      )}
     </SafeAreaView>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -498,11 +559,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     marginLeft: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  actionButtonIcon: {
+    marginRight: 4,
   },
   actionButtonText: {
     fontSize: 12,
@@ -520,6 +586,44 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 14,
     fontWeight: "500",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  mainContent: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#4f46e5',
+    fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+    backgroundColor: '#f9fafb',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#64748b',
+    marginBottom: 16,
   },
 });
 

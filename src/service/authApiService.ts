@@ -75,6 +75,8 @@ export interface UserData {
   };
   emergencyContacts: any[];
   __v: number;
+  createdAt: string;
+  profileImage?: string;
 }
 
 // Interface for API responses

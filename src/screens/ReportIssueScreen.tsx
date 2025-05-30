@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,14 +11,20 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Linking,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { reportIssueService } from "../service/issueApiService";
+import { getToken } from "../service/authApiService";
+import dashboardStore from "../store/DashboardStore";
 
 const LOGO = require("../../assets/AppIcon.png");
 
@@ -44,17 +50,22 @@ type ReportIssueScreenProps = {
 const ReportIssueScreen = ({ navigation, route }: ReportIssueScreenProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [location, setLocation] = useState("");
+  const [locationText, setLocationText] = useState("");
   const [category, setCategory] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [locationCoords, setLocationCoords] = useState<[number, number] | null>(null);
+  const [locationAddress, setLocationAddress] = useState<string>("");
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const CATEGORIES = [
-    { id: "pothole", name: "Road Pothole", icon: "🛣️" },
-    { id: "streetlight", name: "Street Light Issue", icon: "💡" },
-    { id: "water", name: "Water Shortage", icon: "💧" },
-    { id: "garbage", name: "Garbage Collection", icon: "🗑️" },
-    { id: "traffic", name: "Traffic Signal", icon: "🚦" },
-    { id: "other", name: "Other", icon: "📌" },
+    { id: "infrastructure", name: "Infrastructure Issue", icon: "🏗️" },
+    { id: "water", name: "Water Issue", icon: "💧" },
+    { id: "electricity", name: "Electricity Issue", icon: "⚡" },
+    { id: "safety", name: "Safety Issue", icon: "🛡️" },
+    { id: "noise", name: "Noise Issue", icon: "🔊" },
+    { id: "pollution", name: "Pollution Issue", icon: "🌫️" },
+    { id: "other", name: "Other Issue", icon: "📌" },
   ];
 
   const handleAddPhoto = () => {
@@ -72,11 +83,13 @@ const ReportIssueScreen = ({ navigation, route }: ReportIssueScreenProps) => {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      quality: 1,
+      mediaTypes: "images",
+      allowsEditing: true,
+      quality: 0.7,
       allowsMultipleSelection: true,
       selectionLimit: 3 - images.length,
+      base64: false,
+      exif: false,
     });
 
     if (!result.canceled) {
@@ -93,8 +106,11 @@ const ReportIssueScreen = ({ navigation, route }: ReportIssueScreenProps) => {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
+      mediaTypes: "images",
+      quality: 0.7,
+      allowsEditing: true,
+      base64: false,
+      exif: false,
     });
 
     if (!result.canceled) {
@@ -107,45 +123,147 @@ const ReportIssueScreen = ({ navigation, route }: ReportIssueScreenProps) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const getCurrentLocation = async () => {
+    try {
+      setIsLoadingLocation(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status !== "granted") {
+        Alert.alert(
+          "Location Permission Required",
+          "Please enable location services to use this feature",
+          [
+            {
+              text: "Open Settings",
+              onPress: () => Linking.openSettings(),
+            },
+            { text: "Cancel", style: "cancel" },
+          ]
+        );
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Highest,
+      });
+
+      // Get address from coordinates
+      const addressResponse = await Location.reverseGeocodeAsync({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      let addressText = "";
+      if (addressResponse && addressResponse.length > 0) {
+        const address = addressResponse[0];
+        addressText = [
+          address.street,
+          address.city,
+          address.district,
+          address.postalCode,
+          address.region,
+          address.country,
+        ]
+          .filter(Boolean)
+          .join(", ");
+      } else {
+        addressText = `Location coordinates: ${location.coords.latitude}, ${location.coords.longitude}`;
+      }
+
+      setLocationCoords([location.coords.longitude, location.coords.latitude]);
+      setLocationAddress(addressText);
+      setLocationText(addressText);
+      setIsLoadingLocation(false);
+    } catch (error) {
+      console.error("Error getting location:", error);
+      Alert.alert("Error", "Failed to get your location. Please try again.");
+      setIsLoadingLocation(false);
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!title || !description || !location || !category) {
+    if (!title || !description || !locationText || !category) {
       Alert.alert("Missing Fields", "Please fill in all required fields");
       return;
     }
 
-    try {
-      // Format date in a user-friendly way
-      const now = new Date();
-      const formattedDate = "Just now";
+    if (!locationCoords || !locationAddress) {
+      Alert.alert("Location Required", "Please get your current location first");
+      return;
+    }
 
-      // Create new issue object
-      const newIssue = {
-        id: Date.now().toString(), // Using timestamp as temporary ID
+    try {
+      setIsSubmitting(true);
+      // Check if we have a valid auth token
+      const token = await getToken();
+      if (!token) {
+        Alert.alert(
+          "Authentication Required",
+          "Please log in to report an issue.",
+          [
+            {
+              text: "OK",
+              onPress: () => navigation.navigate("Login"),
+            },
+          ]
+        );
+        return;
+      }
+
+      console.log("Starting issue creation...");
+      console.log("Form data:", { 
+        title, 
+        description, 
+        location: {
+          coordinates: locationCoords,
+          address: locationAddress
+        }, 
+        category 
+      });
+
+      // Convert images to base64 if needed
+      let base64Image = undefined;
+      if (images.length > 0) {
+        console.log("Converting image to base64...");
+        try {
+          // For now, just use the first image
+          const response = await fetch(images[0]);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          base64Image = await new Promise<string>((resolve, reject) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error("Failed to read image"));
+            reader.readAsDataURL(blob);
+          });
+          console.log("Image converted successfully");
+        } catch (imageError) {
+          console.error("Error converting image:", imageError);
+          throw new Error("Failed to process image. Please try again.");
+        }
+      }
+
+      console.log("Making API call to create issue...");
+      // Create issue using the API service
+      const newIssue = await reportIssueService.createIssue({
         title,
         description,
-        location,
+        location: {
+          coordinates: locationCoords,
+          address: locationAddress
+        },
         category,
-        date: formattedDate,
-        status: "pending",
-        upvotes: 0,
-        // Store the category for image lookup rather than the actual image URI
-        // This allows us to use the correct image when displaying the issue
-        image: category,
-      };
+        image: base64Image,
+      });
 
-      // Add the new issue using the function passed through route params
-      if (route.params?.addNewIssue) {
-        await route.params.addNewIssue(newIssue);
-      } else {
-        // Fallback: Save directly to AsyncStorage if function not available
-        const storedIssues = await AsyncStorage.getItem("reportedIssues");
-        const currentIssues = storedIssues ? JSON.parse(storedIssues) : [];
-        const updatedIssues = [...currentIssues, newIssue];
-        await AsyncStorage.setItem(
-          "reportedIssues",
-          JSON.stringify(updatedIssues)
-        );
+      console.log("API response:", newIssue);
+
+      if (!newIssue) {
+        throw new Error("Failed to create issue. Please try again.");
       }
+
+      // Refresh dashboard data and user data
+      await dashboardStore.loadIssues();
+      await dashboardStore.refreshUserData();
 
       // Show success message
       Alert.alert(
@@ -166,12 +284,17 @@ const ReportIssueScreen = ({ navigation, route }: ReportIssueScreenProps) => {
       // Reset form
       setTitle("");
       setDescription("");
-      setLocation("");
+      setLocationText("");
       setCategory("");
       setImages([]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting issue:", error);
-      Alert.alert("Error", "Failed to submit your issue. Please try again.");
+      Alert.alert(
+        "Error",
+        error.message || "Failed to submit your issue. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -189,7 +312,11 @@ const ReportIssueScreen = ({ navigation, route }: ReportIssueScreenProps) => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={24}
+              color="#ffffff"
+            />
           </TouchableOpacity>
           <Image source={LOGO} style={styles.headerLogo} />
           <Text style={styles.headerTitle}>Report Issue</Text>
@@ -245,14 +372,31 @@ const ReportIssueScreen = ({ navigation, route }: ReportIssueScreenProps) => {
                 <TextInput
                   style={styles.locationInput}
                   placeholder="Enter the location of the issue"
-                  value={location}
-                  onChangeText={setLocation}
+                  value={locationText}
+                  onChangeText={setLocationText}
                   placeholderTextColor="#94a3b8"
+                  editable={false}
                 />
-                <TouchableOpacity style={styles.locationButton}>
-                  <Text style={styles.locationButtonText}>📍</Text>
+                <TouchableOpacity 
+                  style={[
+                    styles.locationButton,
+                    isLoadingLocation && styles.locationButtonDisabled
+                  ]} 
+                  onPress={getCurrentLocation}
+                  disabled={isLoadingLocation}
+                >
+                  {isLoadingLocation ? (
+                    <ActivityIndicator color="#ffffff" size="small" />
+                  ) : (
+                    <Text style={styles.locationButtonText}>📍</Text>
+                  )}
                 </TouchableOpacity>
               </View>
+              {locationAddress && (
+                <Text style={styles.locationAddressText}>
+                  {locationAddress}
+                </Text>
+              )}
 
               <Text style={styles.formLabel}>Description*</Text>
               <TextInput
@@ -306,10 +450,15 @@ const ReportIssueScreen = ({ navigation, route }: ReportIssueScreenProps) => {
             </View>
 
             <TouchableOpacity
-              style={styles.submitButton}
+              style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
               onPress={handleSubmit}
+              disabled={isSubmitting}
             >
-              <Text style={styles.submitButtonText}>Submit Report</Text>
+              {isSubmitting ? (
+                <ActivityIndicator color="#ffffff" size="small" />
+              ) : (
+                <Text style={styles.submitButtonText}>Submit Report</Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.disclaimer}>
@@ -557,6 +706,19 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     lineHeight: 20,
+  },
+  locationButtonDisabled: {
+    backgroundColor: "#a0a0a0",
+  },
+  locationAddressText: {
+    fontSize: 12,
+    color: "#64748b",
+    marginTop: -8,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  submitButtonDisabled: {
+    backgroundColor: "#6b7280",
   },
 });
 
