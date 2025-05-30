@@ -11,7 +11,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "assets/**/*",
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.bharatsudhar.app",
@@ -62,7 +65,9 @@
             "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0",
             "gradleProperties": {
-              "androidx.core.splashscreen.version": "1.2.0-alpha02"
+              "androidx.core.splashscreen.version": "1.2.0-alpha02",
+              "android.enableR8.fullMode": "false",
+              "org.gradle.jvmargs": "-Xmx2048m -XX:MaxMetaspaceSize=512m"
             }
           }
         }
