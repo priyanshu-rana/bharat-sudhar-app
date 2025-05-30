@@ -18,9 +18,9 @@
     "production": {
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:bundleRelease",
+        "gradleCommand": ":app:assembleRelease",
         "autoIncrement": true,
-        "distribution": "store",
+        "distribution": "internal",
         "ndk": "26.1.10909125",
         "resourceClass": "medium"
       },

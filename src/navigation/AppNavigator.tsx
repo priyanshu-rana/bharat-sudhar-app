@@ -45,20 +45,6 @@ const AlertsWithNavbar = ({ navigation }: any) => (
   </View>
 );
 
-// type AlertDetailsScreenProps = {
-//   route: RouteProp<RootStackParamList, "AlertDetails">;
-//   navigation: NativeStackNavigationProp<RootStackParamList, "AlertDetails">;
-// };
-
-const AlertDetailsWithNavbar = ({ route, navigation }: any) => {
-  return (
-    <View style={styles.screen}>
-      <AlertDetailsScreen navigation={navigation} route={route} />
-      <Navbar />
-    </View>
-  );
-};
-
 const ProfileWithNavbar = ({ navigation }: any) => (
   <View style={styles.screen}>
     <ProfileScreen />
@@ -112,7 +98,7 @@ const AppNavigator = () => {
         <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
         <Stack.Screen name="Dashboard" component={DashboardWithNavbar} />
         <Stack.Screen name="Alerts" component={AlertsWithNavbar} />
-        <Stack.Screen name="AlertDetails" component={AlertDetailsWithNavbar} />
+        <Stack.Screen name="AlertDetails" component={AlertDetailsScreen} />
         <Stack.Screen name="Profile" component={ProfileWithNavbar} />
         <Stack.Screen name="Settings" component={SettingsWithNavbar} />
       </Stack.Navigator>

@@ -8,7 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { observer } from "mobx-react-lite";
-import MapView, { Marker } from "react-native-maps"; // Optional: for a mini-map
+import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { RespondAlertModalStyles as styles } from "./RespondAlertModalStylesheet"; // Renamed for clarity
 import { AlertType, SOSStatusType } from "../../navigation/types";
 import AlertStore from "../../store/AlertStore";
@@ -92,7 +92,8 @@ const RespondAlertModal = observer(
               {alert?.location?.coordinates && (
                 <MapView
                   style={styles.miniMap}
-                  initialRegion={{
+                  provider={PROVIDER_DEFAULT}
+                  region={{
                     latitude: alert.location.coordinates[1],
                     longitude: alert.location.coordinates[0],
                     latitudeDelta: 0.01,
@@ -100,6 +101,8 @@ const RespondAlertModal = observer(
                   }}
                   scrollEnabled={false}
                   zoomEnabled={false}
+                  loadingEnabled={true}
+                  mapType="standard"
                 >
                   <Marker
                     coordinate={{

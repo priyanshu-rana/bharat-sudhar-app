@@ -5,9 +5,28 @@ export const AlertMapStyles = StyleSheet.create({
     margin: 0,
     justifyContent: "flex-end",
   },
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
   mapContainer: {
     flex: 1,
     position: "relative",
+  },
+  map: {
+    flex: 1,
+  },
+  closeButton: {
+    backgroundColor: "#4f46e5",
+    padding: 15,
+    alignItems: "center",
+    margin: 16,
+    borderRadius: 8,
+  },
+  closeButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
   },
   bottomContainer: {
     position: "absolute",
@@ -17,12 +36,6 @@ export const AlertMapStyles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 12,
     padding: 16,
-  },
-
-  map: {
-    // flex: 1,
-    width: "100%",
-    height: "75%",
   },
   closeMapButton: {
     position: "absolute",

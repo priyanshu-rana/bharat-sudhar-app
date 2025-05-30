@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
 import { AlertScreenStyles } from "./AlertScreen/AlertScreenStylesheet"; // Assuming this path is correct relative to the new stylesheet
 
 export const AlertDetailsScreenStyles = StyleSheet.create({
@@ -6,8 +6,14 @@ export const AlertDetailsScreenStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: AlertScreenStyles.container.backgroundColor, // Use common background
   },
+  scrollContainer: {
+    flex: 1,
+  },
   contentContainer: {
     padding: 16,
+  },
+  bottomSpacing: {
+    height: 20, // Reduced since we don't need space for sticky button
   },
   card: {
     backgroundColor: "white",
@@ -156,5 +162,48 @@ export const AlertDetailsScreenStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 12,
+  },
+  mapCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  miniMap: {
+    width: '100%',
+    height: 150,
+    borderRadius: 12,
+  },
+  directionsButton: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: '#4f46e5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+  },
+  directionsButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

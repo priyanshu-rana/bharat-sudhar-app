@@ -37,12 +37,7 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
-      "softwareKeyboardLayoutMode": "pan",
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyD7vGcTq2p7TTlH4V9qJx1lJYvJjY0zQ3Q"
-        }
-      }
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "favicon": "./assets/AppIcon.png"

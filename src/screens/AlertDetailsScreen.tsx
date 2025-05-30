@@ -7,6 +7,8 @@ import {
   Image,
   TouchableOpacity,
   Linking,
+  ScrollView,
+  Platform,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,6 +21,7 @@ import { AlertDetailsScreenStyles } from "./AlertDetailsScreenStylesheet";
 import { SOSStatusType } from "../navigation/types";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { getAlertCardStyles } from "../helpers";
+import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 
 const LOGO = require("../../assets/AppIcon.png");
 
@@ -38,6 +41,20 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
     };
     fetchUser();
   }, []);
+
+  const openMapsWithDirections = () => {
+    if (alert?.location?.coordinates) {
+      const lat = alert.location.coordinates[1];
+      const lng = alert.location.coordinates[0];
+      const label = `Emergency: ${alert.emergencyType}`;
+      const url = Platform.select({
+        ios: `maps://app?saddr=Current+Location&daddr=${lat},${lng}&dirflg=d`,
+        android: `google.navigation:q=${lat},${lng}`,
+      }) || `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+      
+      Linking.openURL(url);
+    }
+  };
 
   if (!alert) {
     return (
@@ -150,20 +167,10 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
         </View>
       </LinearGradient>
 
-      <View style={AlertDetailsScreenStyles.contentContainer}>
-        {/* <View style={AlertDetailsScreenStyles.card}>
-          <Text style={AlertDetailsScreenStyles.cardTitle}>
-            {alert.emergencyType.charAt(0).toUpperCase() +
-              alert.emergencyType.slice(1)}{" "}
-            Alert
-          </Text>
-          <Text style={AlertDetailsScreenStyles.descriptionText}>
-            "{alert.description}"
-          </Text>
-          <Text style={AlertDetailsScreenStyles.detailText}>
-            Reported at: {new Date(alert.createdAt).toLocaleString()}
-          </Text>
-        </View> */}
+      <ScrollView 
+        style={AlertDetailsScreenStyles.scrollContainer}
+        contentContainerStyle={AlertDetailsScreenStyles.contentContainer}
+      >
         <View style={[AlertDetailsScreenStyles.card]}>
           <View style={AlertDetailsScreenStyles.cardHeader}>
             <View style={AlertDetailsScreenStyles.typeContainer}>
@@ -226,6 +233,49 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
           </View>
         </View>
 
+        {alert?.location?.coordinates && (
+          <View style={AlertDetailsScreenStyles.mapCard}>
+            <MapView
+              style={AlertDetailsScreenStyles.miniMap}
+              provider={PROVIDER_DEFAULT}
+              initialRegion={{
+                latitude: alert.location.coordinates[1],
+                longitude: alert.location.coordinates[0],
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }}
+              scrollEnabled={false}
+              zoomEnabled={false}
+              loadingEnabled={true}
+              mapType="standard"
+            >
+              <Marker
+                coordinate={{
+                  latitude: alert.location.coordinates[1],
+                  longitude: alert.location.coordinates[0],
+                }}
+                title={`Emergency: ${alert.emergencyType}`}
+                description={alert.description}
+                pinColor="red"
+              />
+            </MapView>
+            <TouchableOpacity
+              style={AlertDetailsScreenStyles.directionsButton}
+              onPress={openMapsWithDirections}
+            >
+              <MaterialCommunityIcons
+                name="directions"
+                size={20}
+                color="white"
+                style={{ marginRight: 8 }}
+              />
+              <Text style={AlertDetailsScreenStyles.directionsButtonText}>
+                Get Directions
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={AlertDetailsScreenStyles.card}>
           <Text style={AlertDetailsScreenStyles.sectionTitle}>
             Alert Created By
@@ -267,8 +317,27 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
           </View>
         </View>
 
-        {user &&
-          (alert.userRole !== "victim" ? (
+        <View style={AlertDetailsScreenStyles.card}>
+          <Text style={AlertDetailsScreenStyles.sectionTitle}>
+            Responders ({alert.responders?.length || 0})
+          </Text>
+          {alert.responders && alert.responders.length > 0 ? (
+            <FlatList
+              data={alert.responders}
+              renderItem={renderResponderItem}
+              keyExtractor={(item) => item.userDetails.id}
+              style={AlertDetailsScreenStyles.responderList}
+              scrollEnabled={false}
+            />
+          ) : (
+            <Text style={AlertDetailsScreenStyles.emptyText}>
+              No responders yet.
+            </Text>
+          )}
+        </View>
+
+        {user && (
+          alert.userRole !== "victim" ? (
             <View style={AlertDetailsScreenStyles.card}>
               <Text style={AlertDetailsScreenStyles.sectionTitle}>
                 Your Response
@@ -285,25 +354,11 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
                 patient as responders are notified.
               </Text>
             </View>
-          ))}
-        <View style={AlertDetailsScreenStyles.card}>
-          <Text style={AlertDetailsScreenStyles.sectionTitle}>
-            Responders ({alert.responders?.length || 0})
-          </Text>
-          {alert.responders && alert.responders.length > 0 ? (
-            <FlatList
-              data={alert.responders}
-              renderItem={renderResponderItem}
-              keyExtractor={(item) => item.userDetails.id}
-              style={AlertDetailsScreenStyles.responderList}
-            />
-          ) : (
-            <Text style={AlertDetailsScreenStyles.emptyText}>
-              No responders yet.
-            </Text>
-          )}
-        </View>
-      </View>
+          )
+        )}
+
+        <View style={AlertDetailsScreenStyles.bottomSpacing} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
