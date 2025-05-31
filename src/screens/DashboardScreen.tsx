@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -105,8 +105,14 @@ const DashboardScreen = observer(({ navigation }: DashboardScreenProps) => {
   useFocusEffect(
     useCallback(() => {
       dashboardStore.loadIssues();
-    }, [activeFilter])
+    }, [])
   );
+
+  // Filter issues locally
+  const filteredIssues = useMemo(() => {
+    if (activeFilter === "all") return dashboardStore.issues;
+    return dashboardStore.issues.filter(issue => issue.status === activeFilter);
+  }, [activeFilter, dashboardStore.issues]);
 
   const navigateToReportIssue = () => {
     navigation.navigate("ReportIssue");
@@ -342,7 +348,7 @@ const DashboardScreen = observer(({ navigation }: DashboardScreenProps) => {
           </View>
         ) : (
           <FlatList
-            data={dashboardStore.issues}
+            data={filteredIssues}
             renderItem={renderIssueItem}
             keyExtractor={(item) => item._id}
             contentContainerStyle={styles.listContainer}

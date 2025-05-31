@@ -6,13 +6,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import { observer } from "mobx-react-lite";
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
-import { RespondAlertModalStyles as styles } from "./RespondAlertModalStylesheet"; // Renamed for clarity
+import { RespondAlertModalStyles as styles } from "./RespondAlertModalStylesheet";
 import { AlertType, SOSStatusType } from "../../navigation/types";
 import AlertStore from "../../store/AlertStore";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"; // Import Icons
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import CustomMapView from "../MapView";
 
 interface RespondAlertModalProps {
   visible: boolean;
@@ -90,28 +91,17 @@ const RespondAlertModal = observer(
               )}
               {/* Optional: Mini-map for location context */}
               {alert?.location?.coordinates && (
-                <MapView
+                <CustomMapView
                   style={styles.miniMap}
-                  provider={PROVIDER_DEFAULT}
-                  region={{
-                    latitude: alert.location.coordinates[1],
-                    longitude: alert.location.coordinates[0],
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                  scrollEnabled={false}
-                  zoomEnabled={false}
-                  loadingEnabled={true}
-                  mapType="standard"
-                >
-                  <Marker
-                    coordinate={{
+                  latitude={alert.location.coordinates[1]}
+                  longitude={alert.location.coordinates[0]}
+                  markers={[
+                    {
                       latitude: alert.location.coordinates[1],
                       longitude: alert.location.coordinates[0],
-                    }}
-                    pinColor="red"
-                  />
-                </MapView>
+                    }
+                  ]}
+                />
               )}
             </View>
 

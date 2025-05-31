@@ -8,8 +8,8 @@ import {
   Platform,
   Linking,
 } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import CustomMapView from './MapView';
 
 interface IssueLocationModalProps {
   visible: boolean;
@@ -55,25 +55,19 @@ const IssueLocationModal = ({
             </TouchableOpacity>
           </View>
 
-          <MapView
+          <CustomMapView
             style={styles.map}
-            provider={PROVIDER_DEFAULT}
-            initialRegion={{
-              latitude: location.coordinates[1],
-              longitude: location.coordinates[0],
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-          >
-            <Marker
-              coordinate={{
+            latitude={location.coordinates[1]}
+            longitude={location.coordinates[0]}
+            markers={[
+              {
                 latitude: location.coordinates[1],
                 longitude: location.coordinates[0],
-              }}
-              title={title}
-              description={location.address}
-            />
-          </MapView>
+                title: title,
+                description: location.address,
+              },
+            ]}
+          />
 
           <Text style={styles.address}>{location.address}</Text>
 

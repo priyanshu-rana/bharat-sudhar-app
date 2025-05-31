@@ -21,7 +21,7 @@ import { AlertDetailsScreenStyles } from "./AlertDetailsScreenStylesheet";
 import { SOSStatusType } from "../navigation/types";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { getAlertCardStyles } from "../helpers";
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import CustomMapView from "../components/MapView";
 
 const LOGO = require("../../assets/AppIcon.png");
 
@@ -235,30 +235,19 @@ const AlertDetailsScreen = ({ route, navigation }: any) => {
 
         {alert?.location?.coordinates && (
           <View style={AlertDetailsScreenStyles.mapCard}>
-            <MapView
+            <CustomMapView
               style={AlertDetailsScreenStyles.miniMap}
-              provider={PROVIDER_DEFAULT}
-              initialRegion={{
-                latitude: alert.location.coordinates[1],
-                longitude: alert.location.coordinates[0],
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }}
-              scrollEnabled={false}
-              zoomEnabled={false}
-              loadingEnabled={true}
-              mapType="standard"
-            >
-              <Marker
-                coordinate={{
+              latitude={alert.location.coordinates[1]}
+              longitude={alert.location.coordinates[0]}
+              markers={[
+                {
                   latitude: alert.location.coordinates[1],
                   longitude: alert.location.coordinates[0],
-                }}
-                title={`Emergency: ${alert.emergencyType}`}
-                description={alert.description}
-                pinColor="red"
-              />
-            </MapView>
+                  title: `Emergency: ${alert.emergencyType}`,
+                  description: alert.description,
+                }
+              ]}
+            />
             <TouchableOpacity
               style={AlertDetailsScreenStyles.directionsButton}
               onPress={openMapsWithDirections}

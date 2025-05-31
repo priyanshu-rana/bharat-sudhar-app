@@ -19,7 +19,10 @@
       "bundleIdentifier": "com.bharatsudhar.app",
       "infoPlist": {
         "NSCameraUsageDescription": "Allow camera access to take issue and other user related photos",
-        "NSPhotoLibraryUsageDescription": "Allow photo library access to upload issue and other user related photos"
+        "NSPhotoLibraryUsageDescription": "Allow photo library access to upload issue and other user related photos",
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to show you nearby issues and alerts",
+        "NSLocationAlwaysUsageDescription": "This app uses your location to show you nearby issues and alerts",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to show you nearby issues and alerts"
       }
     },
     "android": {
@@ -35,20 +38,13 @@
         "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.RECORD_AUDIO",
-        "android.permission.FOREGROUND_SERVICE_LOCATION"
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.INTERNET"
       ],
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "favicon": "./assets/AppIcon.png"
-    },
-    "primaryColor": "#4f46e5",
-    "description": "A civic engagement app to report and track local issues",
-    "owner": "priyanshu-dev",
-    "extra": {
-      "eas": {
-        "projectId": "47e7114c-08e8-4141-8d4b-0d61a50cdd7e"
-      }
     },
     "plugins": [
       [
@@ -79,6 +75,14 @@
           "isAndroidBackgroundLocationEnabled": true
         }
       ]
-    ]
+    ],
+    "primaryColor": "#4f46e5",
+    "description": "A civic engagement app to report and track local issues",
+    "owner": "priyanshu-dev",
+    "extra": {
+      "eas": {
+        "projectId": "47e7114c-08e8-4141-8d4b-0d61a50cdd7e"
+      }
+    }
   }
 }
