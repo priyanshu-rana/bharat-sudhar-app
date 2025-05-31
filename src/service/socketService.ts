@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import { getToken } from "./authApiService";
-import { LOCAL_API_BASE_URL } from "./apiService";
+import { API_BASE_URL } from "./apiService";
 // import { getToken } from "../";
 
 let socket: Socket | null = null;
@@ -8,7 +8,7 @@ let socket: Socket | null = null;
 export const initializeSocket = async () => {
   const token = await getToken(); // Check if the token is available **Not Tested**
 
-  socket = io(LOCAL_API_BASE_URL, {
+  socket = io(API_BASE_URL, {
     autoConnect: true,
     transports: ["websocket"],
     auth: { token },
